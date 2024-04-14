@@ -1,0 +1,13 @@
+{
+    :do {
+        /tool fetch url="https://pki.goog/roots.pem" dst-path="roots-goog.pem"
+        :delay 2s
+        /certificate
+            remove [find where authority expired]
+            import file-name="roots-goog.pem" passphrase=""
+        /file remove [find where name="roots-goog.pem"]
+        :log info "Updated certificate trust store"
+    } on-error={
+        :log error "Failed to update certificate trust store"
+    }
+}

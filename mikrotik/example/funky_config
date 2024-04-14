@@ -1,0 +1,369 @@
+# 2024-03-15 20:26:17 by RouterOS 7.15beta6
+# software id = XXXXXXXXX
+#
+# model = RB952Ui-5ac2nD
+# serial number = XXXXXXXXX
+/interface bridge
+add add-dhcp-option82=yes comment="Interfejsy LAN" dhcp-snooping=yes name=\
+    bridge_lan protocol-mode=none
+add comment="Interfejs LTE" name=bridge_lte protocol-mode=none
+add admin-mac=E4:xx:xx:xx:xx:xx auto-mac=no comment="Interfejs Neostrada" \
+    fast-forward=no name=bridge_neo protocol-mode=none
+/disk
+set usb media-interface=none media-sharing=no slot=usb
+/interface list
+add comment="Interfejsy WAN" name=WAN
+add comment=defconf name=LAN
+/interface wireless security-profiles
+set [ find default=yes ] supplicant-identity=MikroTik
+add authentication-types=wpa2-psk comment="Profil dla sieci bezprzewodowej" \
+    disable-pmkid=yes group-ciphers=tkip,aes-ccm mode=dynamic-keys name=\
+    p36_play_profile supplicant-identity=MikroTik unicast-ciphers=\
+    tkip,aes-ccm
+add authentication-types=wpa2-psk disable-pmkid=yes mode=dynamic-keys name=\
+    p36_profile supplicant-identity=""
+/interface wireless
+set [ find default-name=wlan1 ] adaptive-noise-immunity=client-mode band=\
+    2ghz-b/g/n channel-width=20/40mhz-eC comment="WiFi 2.4Ghz" country=poland \
+    disabled=no disconnect-timeout=5s distance=indoors frequency=2462 \
+    installation=indoor l2mtu=1598 name=wlan2G security-profile=p36_profile \
+    ssid=x36 wireless-protocol=802.11 wmm-support=enabled
+set [ find default-name=wlan2 ] band=5ghz-a/n/ac channel-width=\
+    20/40/80mhz-Ceee comment="WiFi 5GHz" country=poland disabled=no \
+    frequency=auto installation=indoor l2mtu=1598 mode=ap-bridge name=wlan5G \
+    security-profile=p36_play_profile ssid=x36play wmm-support=enabled \
+    wps-mode=disabled
+/interface wireless manual-tx-power-table
+set wlan2G comment="WiFi 2.4Ghz"
+set wlan5G comment="WiFi 5GHz"
+/interface wireless nstreme
+set wlan2G comment="WiFi 2.4Ghz"
+set wlan5G comment="WiFi 5GHz"
+/ip pool
+add comment="Pula dhcp LAN" name=dhcp_lan_pool ranges=\
+    192.168.99.180-192.168.99.220
+add comment="Pula dhcp NEO" name=dhcp_neo_pool ranges=\
+    192.168.1.101-192.168.1.169
+/ip dhcp-server
+add address-pool=dhcp_lan_pool allow-dual-stack-queue=no always-broadcast=yes \
+    bootp-support=dynamic comment="Serwer dhcp  dla LAN" interface=bridge_lan \
+    lease-time=10m name=dhcp_lan
+add address-pool=dhcp_neo_pool allow-dual-stack-queue=no always-broadcast=yes \
+    bootp-support=dynamic interface=bridge_neo name=dhcp_neo
+/queue simple
+add comment="Pomiar ruchu przez interfejs LTE (patrz mangle)" max-limit=\
+    100M/100M name=qRuchLTE packet-marks=traffic_lte queue=\
+    ethernet-default/ethernet-default target=bridge_lan total-limit-at=100M \
+    total-max-limit=100M total-queue=ethernet-default
+/routing table
+add comment="Tablica routingu przez Neostrade" disabled=no fib name=\
+    viaNeostrada
+/ip smb
+set enabled=no interfaces=bridge_lan
+/interface bridge port
+add bridge=bridge_lan comment=defconf interface=ether2 trusted=yes
+add bridge=bridge_lan comment=defconf interface=ether3 trusted=yes
+add bridge=bridge_lan comment=defconf interface=ether4 trusted=yes
+add bridge=bridge_lan comment=defconf fast-leave=yes interface=wlan5G \
+    trusted=yes
+add bridge=bridge_lte interface=ether5
+add bridge=bridge_lan interface=ether1 trusted=yes
+add bridge=bridge_neo edge=no-discover fast-leave=yes interface=wlan2G
+/ip firewall connection tracking
+set udp-timeout=10s
+/ip neighbor discovery-settings
+set discover-interface-list=none lldp-mac-phy-config=yes lldp-max-frame-size=\
+    yes lldp-med-net-policy-vlan=1
+/ip settings
+set rp-filter=loose tcp-syncookies=yes
+/ipv6 settings
+set disable-ipv6=yes
+/interface detect-internet
+set detect-interface-list=WAN
+/interface list member
+add comment=defconf interface=bridge_lan list=LAN
+add interface=bridge_lte list=WAN
+add interface=bridge_neo list=LAN
+/interface wireless access-list
+add comment=neostrada.lan interface=wlan2G mac-address=AC:xx:xx:xx:xx
+/interface wireless cap
+set bridge=bridge_lan discovery-interfaces=bridge_lan interfaces=wlan2G
+/interface wireless sniffer
+set memory-limit=200 receive-errors=yes
+/interface wireless snooper
+set receive-errors=yes
+/ip address
+add address=192.168.188.10/24 comment="Router LTE" interface=bridge_lte \
+    network=192.168.188.0
+add address=192.168.99.1/24 interface=bridge_lan network=192.168.99.0
+add address=192.168.1.10/24 comment="Router TP-Link" interface=bridge_neo network=192.168.1.0
+add address=127.0.0.1 interface=lo network=127.0.0.1
+/ip cloud
+set update-time=no
+/ip dhcp-server alert
+add comment="Wykryto obcy serwer DHCP" disabled=no interface=bridge_neo \
+    on-alert=":local sysname [/system identity get name];\r\
+    \n:local mac \$\"mac-address\";\r\
+    \n:local interf [/interface bridge host get [/interface bridge host find w\
+    here mac-address=\$mac] on-interface];\r\
+    \n\r\
+    \n:log warning \"Unknown DHCP server on interface: \$interface (IP: \$addr\
+    ess, MAC: \$mac, interface: \$interf)\"" valid-server=E4::xx:xx:xx:xx
+/ip dhcp-server config
+set accounting=no
+/ip dhcp-server network
+add address=192.168.1.0/24 comment="Network tp-link" dns-server=\
+    192.168.1.10 domain=.lan gateway=192.168.1.10
+add address=192.168.99.0/24 comment="Network hAP" dns-server=\
+    192.168.99.1 domain=.lan gateway=192.168.99.1 netmask=24 ntp-server=\
+    192.168.188.1
+/ip dns
+set allow-remote-requests=yes cache-max-ttl=3d cache-size=4096KiB servers=\
+    192.168.188.1,192.168.1.1
+/ip dns adlist
+add file=adhosts_20240309.txt ssl-verify=no
+/ip dns static
+add address=192.168.99.1 comment="Router hAP" name=router.lan
+add address=192.168.188.1 comment="Router LTE" name=lte.lan
+add address=192.168.1.1 comment="Router Neostrada" name=neostrada.lan
+add address=192.168.99.100 comment="TV" name=telewizor.lan
+/ip firewall address-list
+add address=192.168.99.100 disabled=yes list=list_via_neo
+add address=192.168.99.99 disabled=yes list=list_via_neo
+add address=192.168.99.220 disabled=yes list=list_via_neo
+/ip firewall filter
+add action=jump chain=forward comment="jump to kid-control rules" \
+    jump-target=kid-control
+add action=accept chain=input comment=\
+    "defconf: accept established,related,untracked" connection-state=\
+    established,related,untracked
+add action=drop chain=input comment="defconf: drop invalid" connection-state=\
+    invalid
+add action=accept chain=input comment="defconf: accept ICMP" \
+    in-interface-list=LAN protocol=icmp
+add action=accept chain=input comment="Accept DNS request" dst-port=53 \
+    in-interface-list=LAN protocol=udp
+add action=accept chain=input comment="Accept NTP response" in-interface-list=\
+    WAN protocol=udp src-port=123
+add action=accept chain=input comment=\
+    "Accept discovery requests from loopback" connection-state=new dst-port=\
+    5678 in-interface=lo protocol=udp
+add action=accept chain=input comment="Answers from DNS at LTE" \
+    connection-state=new in-interface=bridge_lte protocol=udp \
+    src-mac-address=48::xx:xx:xx:xx
+add action=accept chain=input comment=\
+    "defconf: accept to local loopback (for CAPsMAN)" disabled=yes \
+    dst-address=127.0.0.1
+add action=drop chain=input comment="defconf: drop all not coming from LAN" \
+    in-interface-list=!LAN log=yes log-prefix="drop not from LAN"
+add action=drop chain=forward comment=\
+    "defconf: drop all from WAN not DSTNATed" connection-nat-state=!dstnat \
+    connection-state=new in-interface-list=WAN log=yes log-prefix=\
+    "drop all from WAN not DSTNATed "
+add action=accept chain=forward comment="defconf: accept in ipsec policy" \
+    ipsec-policy=in,ipsec
+add action=accept chain=forward comment="defconf: accept out ipsec policy" \
+    ipsec-policy=out,ipsec
+add action=fasttrack-connection chain=forward comment="defconf: fasttrack" \
+    connection-state=established,related hw-offload=yes
+add action=accept chain=forward comment=\
+    "defconf: accept established,related, untracked" connection-state=\
+    established,related,untracked
+# add action=accept chain=forward comment="Accept bridge_neo -> internet" \
+    # disabled=yes dst-address=!192.168.0.0/16 log=yes log-prefix=\
+    # "Accept bridge_neo -> internet" src-address=192.168.1.0/24
+# add action=accept chain=forward comment="Accept bridge_neo -> internet" \
+    # disabled=yes dst-address=192.168.1.0/24 log=yes log-prefix=\
+    # "Accept internet -> bridge_neo" src-address=!192.168.0.0/16
+add action=drop chain=forward comment="defconf: drop invalid" \
+    connection-state=invalid
+add action=accept chain=output comment="Accept NTP request" dst-port=123 \
+    out-interface-list=WAN protocol=udp
+/ip firewall mangle
+add action=mark-packet chain=prerouting comment=\
+    "Mark traffic to LTE" dst-address=!192.168.0.0/16 in-interface=\
+    bridge_lte new-packet-mark=traffic_lte passthrough=yes
+add action=mark-packet chain=prerouting comment=\
+    "Mark traffic from LTE" in-interface=bridge_lte new-packet-mark=\
+    traffic_lte passthrough=yes src-address=!192.168.0.0/16
+add action=mark-connection chain=prerouting comment=\
+    "Mark new connections toward Neostrada" connection-mark=no-mark \
+    connection-state=new dst-address=!192.168.0.0/16 new-connection-mark=\
+    conn_to_neo passthrough=yes src-address-list=list_via_neo
+add action=mark-routing chain=prerouting comment=\
+    "Mark routing toward Neostrada" connection-mark=conn_to_neo dst-address=\
+    !192.168.0.0/16 new-routing-mark=viaNeostrada passthrough=no \
+    src-address-list=list_via_neo
+add action=mark-packet chain=forward comment=\
+    "Mark traffic to Neostrada" connection-mark=conn_to_neo \
+    dst-address=!192.168.0.0/16 log-prefix="do neostrady " new-packet-mark=\
+    traffic_neo out-interface=bridge_lan passthrough=yes src-address=\
+    192.168.0.0/16
+add action=mark-packet chain=prerouting comment=\
+    "Mark traffic from Neostrada" connection-mark=conn_to_neo \
+    dst-address=192.168.0.0/16 in-interface=bridge_lan new-packet-mark=\
+    traffic_neo passthrough=yes src-address=!192.168.0.0/16
+/ip hotspot profile
+set [ find default=yes ] html-directory=hotspot
+/ip route
+add comment="Default LTE" disabled=no distance=10 dst-address=0.0.0.0/0 \
+    gateway=192.168.188.1%bridge_lte pref-src="" routing-table=main scope=30 \
+    suppress-hw-offload=no target-scope=10
+add disabled=no distance=20 dst-address=0.0.0.0/0 gateway=\
+    192.168.1.1%bridge_neo pref-src="" routing-table=main scope=30 \
+    suppress-hw-offload=no target-scope=10
+add disabled=no distance=2 dst-address=0.0.0.0/0 gateway=\
+    192.168.1.1%bridge_neo pref-src="" routing-table=viaNeostrada scope=30 \
+    suppress-hw-offload=no target-scope=10
+/ip smb shares
+set [ find default=yes ] directory=/flash/pub
+add directory=usb1/media name=media read-only=yes valid-users=guest
+/ipv6 nd
+set [ find default=yes ] disabled=yes
+/routing rule
+add action=lookup-only-in-table comment="Traffic toward neostrada" \
+    disabled=no dst-address="" interface=bridge_neo routing-mark=viaNeostrada \
+    table=viaNeostrada
+/system clock
+set time-zone-name=Europe/Warsaw
+/system ntp client
+set enabled=yes mode=multicast
+/system ntp client servers
+add address=lte.lan
+/system package update
+set channel=testing
+/system scheduler
+add interval=30s name=updateLEDs on-event="/system/script/run lteSignal2Led" \
+    policy=read,write,test start-date=2024-03-07 start-time=23:09:49
+
+
+
+
+
+    # mar/11/2024 00:00:00 by RouterOS 7.9
+# software id = LNA4-IPRD
+#
+# model = RBD52G-5HacD2HnD
+# serial number = xxxxxxx
+/interface bridge
+add admin-mac=2C:xx:xx:xx:xx:CD auto-mac=no comment=defconf name=bridge
+/interface ethernet
+set [ find default-name=ether1 ] mac-address=2C:xx:xx:xx:xx:AA
+/interface wireless
+set [ find default-name=wlan1 ] antenna-gain=0 band=2ghz-b/g/n country=xxxx \
+    distance=indoors frequency=auto installation=indoor mac-address=\
+    E8:xx:xx:xx:xx:A1 mode=ap-bridge name=wlan2.4 ssid=NET \
+    station-roaming=enabled wireless-protocol=802.11
+set [ find default-name=wlan2 ] antenna-gain=0 band=5ghz-a/n/ac \
+    channel-width=20/40/80mhz-XXXX country=xxxx disabled=no distance=\
+    indoors frequency=auto installation=indoor mac-address=2C:xx:xx:xx:xx:D8 \
+    mode=ap-bridge name=wlan5g ssid=NET station-roaming=enabled \
+    wireless-protocol=802.11
+/interface wireguard
+add disabled=yes listen-port=51001 mtu=1420 name=wire-aws
+/interface list
+add comment=defconf name=WAN
+add comment=defconf name=LAN
+/interface lte apn
+set [ find default=yes ] ip-type=ipv4 use-network-apn=no
+/interface wireless security-profiles
+set [ find default=yes ] authentication-types=wpa2-psk mode=dynamic-keys \
+    supplicant-identity=MikroTik
+/ip pool
+add name=dhcp ranges=192.168.100.10-192.168.100.254
+/ip dhcp-server
+add address-pool=dhcp interface=bridge lease-time=10m name=defconf
+/routing bgp template
+set default disabled=no output.network=bgp-networks
+/routing ospf instance
+add disabled=no name=default-v2
+/routing ospf area
+add disabled=yes instance=default-v2 name=backbone-v2
+/interface bridge port
+add bridge=bridge comment=defconf ingress-filtering=no interface=ether2
+add bridge=bridge comment=defconf ingress-filtering=no interface=ether3
+add bridge=bridge comment=defconf ingress-filtering=no interface=ether4
+add bridge=bridge comment=defconf ingress-filtering=no interface=ether5
+add bridge=bridge comment=defconf ingress-filtering=no interface=wlan2.4
+add bridge=bridge comment=defconf ingress-filtering=no interface=wlan5g
+/ip neighbor discovery-settings
+set discover-interface-list=LAN
+/ip settings
+set max-neighbor-entries=8192
+/ipv6 settings
+set disable-ipv6=yes max-neighbor-entries=8192
+/interface list member
+add comment=defconf interface=bridge list=LAN
+add comment=defconf interface=ether1 list=WAN
+/interface ovpn-server server
+set auth=sha1,md5
+/interface wireguard peers
+add allowed-address=192.168.69.10/24 disabled=yes endpoint-address=xx.xx.xx.xx \
+    endpoint-port=51001 interface=wire-aws persistent-keepalive=25s \
+    public-key="osi1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx="
+/ip address
+add address=192.168.100.1/24 comment=defconf interface=ether2 network=\
+    192.168.100.0
+add address=192.168.69.10/24 interface=wire-aws network=192.168.69.0
+/ip cloud
+set ddns-enabled=yes
+/ip dhcp-client
+add comment=defconf interface=ether1
+/ip dhcp-server network
+add address=192.168.100.0/24 comment=defconf gateway=192.168.100.1 netmask=24
+/ip dns
+set allow-remote-requests=yes
+/ip dns static
+add address=192.168.100.1 comment=defconf name=router.lan
+/ip firewall filter
+add action=accept chain=input comment=\
+    "defconf: accept established,related,untracked" connection-state=\
+    established,related,untracked
+add action=accept chain=input comment=WINBOX dst-port=9800 in-interface-list=\
+    WAN protocol=tcp
+add action=accept chain=forward comment=Wireguard-forward disabled=yes \
+    out-interface=wire-aws src-address=192.168.100.0/24
+add action=drop chain=input comment="defconf: drop invalid" connection-state=\
+    invalid
+add action=accept chain=input comment="defconf: accept ICMP" protocol=icmp
+add action=accept chain=input comment=\
+    "defconf: accept to local loopback (for CAPsMAN)" dst-address=127.0.0.1
+add action=drop chain=input comment="defconf: drop all not coming from LAN" \
+    in-interface-list=!LAN
+add action=accept chain=forward comment="defconf: accept in ipsec policy" \
+    ipsec-policy=in,ipsec
+add action=accept chain=forward comment="defconf: accept out ipsec policy" \
+    ipsec-policy=out,ipsec
+add action=fasttrack-connection chain=forward comment="defconf: fasttrack" \
+    connection-state=established,related hw-offload=yes
+add action=accept chain=forward comment=\
+    "defconf: accept established,related, untracked" connection-state=\
+    established,related,untracked
+add action=drop chain=forward comment="defconf: drop invalid" \
+    connection-state=invalid
+add action=drop chain=forward comment=\
+    "defconf: drop all from WAN not DSTNATed" connection-nat-state=!dstnat \
+    connection-state=new in-interface-list=WAN
+/ip firewall nat
+add action=masquerade chain=srcnat comment=wireguard-nat disabled=yes \
+    out-interface=ether1 src-address=192.168.100.0/24
+add action=masquerade chain=srcnat comment="defconf: masquerade -  original" \
+    ipsec-policy=out,none out-interface-list=WAN
+/ip route
+add disabled=yes distance=1 dst-address=0.0.0.0/0 gateway=wire-aws pref-src=\
+    "" routing-table=main scope=30 suppress-hw-offload=no target-scope=10
+add disabled=no distance=2 dst-address=xx.xx.xx.xx/32 gateway=192.168.100.1 \
+    pref-src=0.0.0.0 routing-table=main scope=30 suppress-hw-offload=no \
+    target-scope=10
+/ip service
+set winbox port=9800
+/system clock
+set time-zone-name=world
+/system identity
+set name=mtik
+/system note
+set show-at-login=no
+/system ntp client
+set mode=broadcast
+/tool mac-server
+set allowed-interface-list=LAN

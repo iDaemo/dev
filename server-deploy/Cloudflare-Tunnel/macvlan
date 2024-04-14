@@ -1,0 +1,6 @@
+# run inside terminal to create vlan
+docker network create -d macvlan \
+  --subnet=172.20.0.0/24 \
+  --gateway=172.20.0.1 \
+  -o parent=docker0.20 \ # find parent network #ip a
+  macvlan4 

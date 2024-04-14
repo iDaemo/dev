@@ -1,0 +1,60 @@
+curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+sudo apt-get update
+sudo apt-get install redis
+
+
+
+
+#config that working
+
+#bind 127.0.0.1 ::1
+protected-mode yes
+port 0
+unixsocket /var/run/redis/redis-server.sock
+unixsocketperm 775
+daemonize yes
+supervised systemd
+
+#save 900 1
+#save 300 10
+#save 60 10000
+
+
+I used to be able to simply setup redis operation with unix sockets only by simply changing the redis.conf file and restarting. But now I have to change the redis-server.service systemd unit file to a bare minimum to get it running.
+
+I searched for documentation but did not find any and hope that there is also a way to run on a unix socket with a different user than root (wont start if user and group defined in the .service file) and with all the restrictions you have in place there as there are surely some security advantages to them.
+
+My bare minimum .service file looks like this now to get it running:
+
+[Unit]
+Description=Advanced key-value store
+After=network.target
+Documentation=http://redis.io/documentation, man:redis-server(1)
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/redis-server /etc/redis/redis.conf
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+Alias=redis.service
+The redis.conf values changed from standard are:
+
+port 0
+unixsocket /run/redis.sock
+unixsocketperm 775
+
+
+### EXTRA MAK MAK
+For anyone else still looking for a solution, Type=forking (which is default for redis installed with apt) is incompatible with supervised=systemd in redis.conf.
+
+It has to be updated to Type=simple in /etc/systemd/system/redis.service.
+
+Forking is only required in daemonized mode, but systemd managed redis overrules the daemonized setting.
+
+Change from Restart=always to Restart=on-failure
+
+For reference- redis.conf, https://www.freedesktop.org/software/systemd/man/systemd.service.html
