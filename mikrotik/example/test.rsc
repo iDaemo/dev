@@ -21,19 +21,22 @@
 # assign ethernet ports
 /interface ethernet set [ find default-name=ether1 ] name=ether1-wan
 /interface ethernet set [ find default-name=ether2 ] name=ether2-oob
-/interface ethernet set [ find default-name=ether12 ] name=ether12-apfl2
-/interface ethernet set [ find default-name=ether13 ] name=ether13-dvs
-/interface ethernet set [ find default-name=ether15 ] name=ether15-trunk
-/interface ethernet set [ find default-name=ether16 ] name=ether16-apfl3
+#/interface ethernet set [ find default-name=ether3 ] name=ether3
+#/interface ethernet set [ find default-name=ether4 ] name=ether4
+#/interface ethernet set [ find default-name=ether5 ] name=ether5
+#/interface ethernet set [ find default-name=ether12 ] name=ether12-apfl2
+#/interface ethernet set [ find default-name=ether13 ] name=ether13-dvs
+#/interface ethernet set [ find default-name=ether15 ] name=ether5 
+#/interface ethernet set [ find default-name=ether16 ] name=ether16-apfl3
 
 # DNS server, set to cache for LAN
 /ip dns set allow-remote-requests=yes cache-max-ttl=7d cache-size=4096KiB servers="1.1.1.1,1.0.0.1"
 
 # add connection to internet
-/interface pppoe-client add add-default-route=yes disabled=no interface=ether1-wan name=Trueonline password=Password service-name=Trueonline use-peer-dns=no user=9605418601@fiberhome
+#/interface pppoe-client add add-default-route=yes disabled=no interface=ether1-wan name=Trueonline password=Password service-name=Trueonline use-peer-dns=no user=9605418601@fiberhome
 
 ##### add wireguard
-/interface wireguard add listen-port=13231 mtu=1420 name=wg-sonoshq private-key="0P7UrLurunhoIkU4+cUp3wjS3XbL0uUeqr4gbm/po3E="
+/interface wireguard add listen-port=13231 mtu=1420 name=wg-sonoshq 
 #### Peers
 /interface wireguard peers add allowed-address=10.0.0.2/32 comment=Gle interface=wg-sonoshq public-key="MaHvrXErTnQ4m7gfoRR0Kbz8zKnIM9C8LlnFu1WGXRg="
 /interface wireguard peers add allowed-address=10.0.0.3/32 interface=wg-sonoshq public-key="MNjdDqRmK4C0zvfqqrYoeTq1Fy7qpbqOBf23gJiDrmU="
@@ -92,31 +95,22 @@
 /interface bridge filter add action=drop chain=forward comment="Drop all IPv6 mDNS" disabled=yes dst-mac-address=33:33:00:00:00:FB/FF:FF:FF:FF:FF:FF log=yes log-prefix=drop.mdns.ipv6 mac-protocol=ipv6
 
 # Add bridge port selective to access vlan
-/interface bridge port add bridge=BRI-TEST fast-leave=yes frame-types=admit-only-vlan-tagged interface=ether15-trunk trusted=yes
+/interface bridge port add bridge=BRI-TEST fast-leave=yes frame-types=admit-only-vlan-tagged interface=ether5 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan10 pvid=10 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan11 pvid=11 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan100 pvid=100 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan200 pvid=200 trusted=yes
 
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=10
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=11
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=100
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=200
+/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=10
+/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=11
+/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=100
+/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=200
 /interface list member add interface=ether1-wan list=WAN
 /interface list member add interface=ether2-oob list=MGMT
 /interface list member add interface=ether3 list=InterfaceListVlan10
 /interface list member add interface=ether4 list=InterfaceListVlan10
-/interface list member add interface=ether5 list=InterfaceListVlan10
-/interface list member add interface=ether6 list=InterfaceListVlan10
-/interface list member add interface=ether7 list=InterfaceListVlan10
-/interface list member add interface=ether8 list=InterfaceListVlan10
-/interface list member add interface=ether9 list=InterfaceListVlan10
-/interface list member add interface=ether10 list=InterfaceListVlan10
-/interface list member add interface=ether11 list=InterfaceListVlan10
-/interface list member add interface=ether13-dvs list=InterfaceListVlan10
-/interface list member add interface=ether14 list=InterfaceListVlan10
-/interface list member add interface=ether12-apfl2 list=InterfaceListVlan10
-/interface list member add interface=ether16-apfl3 list=InterfaceListVlan10
+#/interface list member add interface=ether5 list=InterfaceListVlan10
+
 #/interface list member add interface=VLAN10-LAN list=LAN
 #/interface list member add interface=VLAN11-WIFI list=LAN
 #/interface list member add interface=VLAN100-DANTE list=LAN
@@ -176,8 +170,8 @@ add action=drop chain=prerouting comment="defconf: drop bogon IP's" src-address-
 add action=drop chain=prerouting comment="defconf: drop bogon IP's" dst-address-list=bad_dst_ipv4
 add action=drop chain=prerouting comment="defconf: drop non global from WAN" src-address-list=not_global_ipv4 in-interface-list=WAN
 
-add action=drop chain=prerouting comment="defconf: drop forward to local lan from WAN" in-interface-list=WAN dst-address=192.168.88.0/24
-add action=drop chain=prerouting comment="defconf: drop local if not from default IP range" in-interface-list=LAN src-address=!192.168.88.0/24
+#add action=drop chain=prerouting comment="defconf: drop forward to local lan from WAN" in-interface-list=WAN dst-address=192.168.88.0/24
+#add action=drop chain=prerouting comment="defconf: drop local if not from default IP range" in-interface-list=LAN src-address=!192.168.88.0/24
 
 add action=drop chain=prerouting comment="defconf: drop bad UDP" port=0 protocol=udp
 add action=jump chain=prerouting comment="defconf: jump to TCP chain" jump-target=bad_tcp protocol=tcp
@@ -199,6 +193,10 @@ add action=drop chain=bad_tcp comment="defconf: TCP port 0 drop" port=0 protocol
 /ip firewall filter
 add action=accept chain=input comment="defconf: accept ICMP after RAW" protocol=icmp
 add action=accept chain=input comment="defconf: accept established,related,untracked" connection-state=established,related,untracked
+#allow
+add chain=input action=accept in-interface=MGMT comment="Allow Base_Vlan Full Access"
+add chain=input action=accept in-interface=wg-sonoshq  comment="Allow Wireguard"
+
 add action=drop chain=input comment="defconf: drop all not coming from LAN" in-interface-list=!LAN
 
 /ip firewall filter
@@ -213,11 +211,20 @@ add action=drop chain=forward dst-address-list=no_forward_ipv4 comment="defconf:
 add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface-list=WAN
 
 
+
+#######################################
+# MAC Server settings
+#######################################
+
+# Ensure only visibility and availability from BASE_VLAN, the MGMT network
+/ip neighbor discovery-settings set discover-interface-list=MGMT
+/tool mac-server mac-winbox set allowed-interface-list=MGMT
+/tool mac-server set allowed-interface-list=MGMT
+
 #######################################
 # System Tidy
 #######################################
 
-/ip neighbor discovery-settings set discover-interface-list=LAN
 /system logging action add bsd-syslog=yes name=syslog remote=192.168.10.250 syslog-facility=syslog target=remote
 /ip cloud set ddns-enabled=no ddns-update-interval=1d update-time=no
 /system ntp client servers add address=time.cloudflare.com
@@ -233,6 +240,8 @@ add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface-l
 /tool bandwidth-server set enabled=no
 /user add name=sonos group=full password=33338888
 /user remove 0
+
+
 
 #######################################
 # Turn on VLAN mode
