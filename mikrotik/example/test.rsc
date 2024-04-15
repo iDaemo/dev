@@ -76,6 +76,8 @@
 /ip pool add name=POOL200 ranges=192.168.200.101-192.168.200.249
 /ip pool add name=POOL99 ranges=192.168.99.101-192.168.99.120
 
+/ip dhcp-client add disabled=yes interface=ether1-wan use-peer-dns=yes
+
 # DHCP Server
 /ip dhcp-server add address-pool=POOL10 add-arp=yes interface=VLAN10-LAN lease-time=1d name=dhcp-vlan10 lease-script=dhcpleasestatic
 /ip dhcp-server add address-pool=POOL11 add-arp=yes interface=VLAN11-WIFI lease-time=1d name=dhcp-vlan11 lease-script=dhcpleasestatic
@@ -194,7 +196,8 @@ add action=drop chain=bad_tcp comment="defconf: TCP port 0 drop" port=0 protocol
 add action=accept chain=input comment="defconf: accept ICMP after RAW" protocol=icmp
 add action=accept chain=input comment="defconf: accept established,related,untracked" connection-state=established,related,untracked
 #allow
-add chain=input action=accept in-interface=MGMT comment="Allow Base_Vlan Full Access"
+add chain=input action=accept in-interface-list=MGMT comment="Allow Base_Vlan Full Access"
+add chain=input action=accept in-interface-list=LAN comment="Allow Base_Vlan Full Access"
 add chain=input action=accept in-interface=wg-sonoshq  comment="Allow Wireguard"
 
 add action=drop chain=input comment="defconf: drop all not coming from LAN" in-interface-list=!LAN
@@ -217,9 +220,9 @@ add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface-l
 #######################################
 
 # Ensure only visibility and availability from BASE_VLAN, the MGMT network
-/ip neighbor discovery-settings set discover-interface-list=MGMT
-/tool mac-server mac-winbox set allowed-interface-list=MGMT
-/tool mac-server set allowed-interface-list=MGMT
+/ip neighbor discovery-settings set discover-interface-list=LAN
+/tool mac-server mac-winbox set allowed-interface-list=LAN
+/tool mac-server set allowed-interface-list=LAN
 
 #######################################
 # System Tidy
@@ -230,7 +233,7 @@ add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface-l
 /system ntp client servers add address=time.cloudflare.com
 /system ntp client set enabled=yes
 /system clock set time-zone-name=Asia/Bangkok
-/system note set show-at-login=no
+/system note set show-at-login=noๆ
 /ip service disable telnet,ftp,www,www-ssl,api,ssh,api-ssl
 /ip service set ssh port=22022
 /ip ssh set strong-crypto=yes
@@ -240,8 +243,6 @@ add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface-l
 /tool bandwidth-server set enabled=no
 /user add name=sonos group=full password=33338888
 /user remove 0
-
-
 
 #######################################
 # Turn on VLAN mode
