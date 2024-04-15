@@ -14,6 +14,7 @@
 /interface veth add address=192.168.10.238/24 gateway=192.168.10.1 gateway6="" name=veth1
 /interface veth add address=192.168.10.239/24 gateway=192.168.10.1 gateway6="" name=veth2
 /interface wireguard add listen-port=13231 mtu=1420 name=wg-sonoshq private-key="0P7UrLurunhoIkU4+cUp3wjS3XbL0uUeqr4gbm/po3E="
+#
 /interface vlan add interface=BRI-TEST name=VLAN10-LOCAL vlan-id=10
 /interface vlan add interface=BRI-TEST name=VLAN11-WIFI vlan-id=11
 /interface vlan add interface=BRI-TEST name=VLAN12-AGORACONTROL vlan-id=256
@@ -139,25 +140,34 @@
     \n# DHCP lease removed\r\
     \n  /ip dns static remove [find comment=\$token];\r\
     \n}" lease-time=1d name=dhcp-vlan10
+
 /ip dhcp-server add address-pool=POOL11 interface=VLAN11-WIFI lease-time=1d name=dhcp-vlan11
 /ip dhcp-server add address-pool=POOL12 interface=VLAN12-AGORACONTROL lease-script=":local scriptName \"dhcp2dns\"\r\
     \n:do {\r\
     \n  :local scriptObj [:parse [/system script get \$scriptName source]]\r\
     \n  \$scriptObj leaseBound=\$leaseBound leaseServerName=\$leaseServerName leaseActIP=\$leaseActIP leaseActMAC=\$leaseActMAC\r\
     \n} on-error={ :log warning \"DHCP server '\$leaseServerName' lease script error\" };" lease-time=1d name=dhcp-vlan12
+
 /ip smb users set [ find default=yes ] disabled=yes
 /port set 0 name=serial0
 /port set 1 name=serial1
 /system logging action add bsd-syslog=yes name=syslog remote=192.168.10.250 syslog-facility=syslog target=remote
+
 /container add cmd="tunnel --no-autoupdate run --token eyJhIjoiNjdjMzM0ZTA0ZDc1ZTc4OGNhZTFiMjQ4NWEwYWMwM2MiLCJ0IjoiNjUyNThmMTYtNGZhNy00ZGIxLTkwZTMtM2QyZTcyN2NkMWU1IiwicyI6Ik1UVTBNV1pqTURJdFl6WXlOQzAwTURKaUxUZzRabUV0WkdNek5HTXdOREF3Tm1GaiJ9" interface=veth1 start-on-boot=yes workdir=/home/nonroot
 /container config set registry-url=https://registry.hub.docker.com/ tmpdir=pub
+
+
+
 /interface bridge filter add action=drop chain=forward comment="Drop all IPv6 mDNS" disabled=yes dst-mac-address=33:33:00:00:00:FB/FF:FF:FF:FF:FF:FF log=yes log-prefix=drop.mdns.ipv6 mac-protocol=ipv6
+
 /interface bridge port add bridge=BRI-TEST fast-leave=yes frame-types=admit-only-vlan-tagged interface=ether15-trunk internal-path-cost=10 path-cost=10 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan10 internal-path-cost=10 path-cost=10 pvid=10 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan11 internal-path-cost=10 path-cost=10 pvid=11 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan12 internal-path-cost=10 path-cost=10 pvid=12 trusted=yes
+
 /ip firewall connection tracking set udp-timeout=10s
 /ip neighbor discovery-settings set discover-interface-list=all
+
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=10
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=11
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=12
@@ -182,6 +192,7 @@
 /interface list member add interface=*21 list=InterfaceListVlan10
 /interface list member add interface=veth1 list=InterfaceListVlan10
 /interface list member add interface=veth2 list=InterfaceListVlan10
+
 /interface wireguard peers add allowed-address=10.0.0.2/32 comment=Gle interface=wg-sonoshq public-key="MaHvrXErTnQ4m7gfoRR0Kbz8zKnIM9C8LlnFu1WGXRg="
 /interface wireguard peers add allowed-address=10.0.0.3/32 interface=wg-sonoshq public-key="MNjdDqRmK4C0zvfqqrYoeTq1Fy7qpbqOBf23gJiDrmU="
 /interface wireguard peers add allowed-address=10.0.0.4/32 interface=wg-sonoshq public-key="4GLnFZOT8xVoUy1BrxFnRaklMfNSmuBrzjq+YvH0qV0="
@@ -195,20 +206,26 @@
 /interface wireguard peers add allowed-address=10.0.0.12/32 comment=hrc-kl interface=wg-sonoshq public-key="yAi/YI2Xj4AJRihUDRiW1muySqOK7gifIMYA4SKlgAg="
 /interface wireguard peers add allowed-address=10.0.0.13/32,192.168.20.0/24 comment="Hap ac2 mobile" interface=wg-sonoshq public-key="ACW5Tee4YtTaud/5gEdvjjN/p+jUgi4ts+RiszjXvUo="
 /interface wireguard peers add allowed-address=10.0.0.40/32,192.168.40.0/24 comment="Raynue 192.168.40.0/24" interface=wg-sonoshq public-key="bZjIr4w5B8LsOO0onCK1ZmFthCygs23aQvTSXemV/B4="
+
 /ip address add address=192.168.10.1/24 interface=VLAN10-LOCAL network=192.168.10.0
 /ip address add address=192.168.11.1/24 interface=VLAN11-WIFI network=192.168.11.0
 /ip address add address=192.168.12.1/24 interface=VLAN12-AGORACONTROL network=192.168.12.0
 /ip address add address=10.0.0.1/24 interface=wg-sonoshq network=10.0.0.0
 /ip address add address=192.168.99.1/24 interface=ether2-oob network=192.168.99.0
 /ip address add address=192.168.0.1/24 interface=BRI-TEST network=192.168.0.0
+
 /ip cloud set ddns-enabled=yes ddns-update-interval=1d update-time=no
 /ip dhcp-client add disabled=yes interface=ether1-wan use-peer-dns=no
+
 /ip dhcp-server lease add address=192.168.10.236 client-id=1:2:11:32:26:28:60 mac-address=02:11:32:26:28:60 server=dhcp-vlan10
+
 /ip dhcp-server network add address=192.168.10.0/24 dns-server=192.168.10.1 domain=hq.lan gateway=192.168.10.1
 /ip dhcp-server network add address=192.168.11.0/24 dns-server=192.168.11.1 domain=hq.lan gateway=192.168.11.1
 /ip dhcp-server network add address=192.168.12.0/24 dns-server=192.168.12.1 domain=hq.lan gateway=192.168.12.1
 /ip dhcp-server network add address=192.168.99.0/24 dns-server=8.8.8.8,1.1.1.1 domain=hq.lan gateway=192.168.99.1
+
 /ip dns set allow-remote-requests=yes cache-max-ttl=3d cache-size=4096KiB doh-max-concurrent-queries=500 doh-max-server-connections=50 max-concurrent-queries=1000 max-concurrent-tcp-sessions=200 servers=1.1.1.1,1.0.0.1 verify-doh-cert=yes
+
 /ip dns static add address=192.168.10.143 comment=dhcp-vlan10-B0:1F:8C:C7:CD:C4 name=sonos-ap02-fl3.hq.lan ttl=15m
 /ip dns static add address=192.168.10.119 comment=dhcp-vlan10-F0:B3:EC:80:37:B6 name=groundfshowroom.hq.lan ttl=15m
 /ip dns static add address=192.168.10.220 comment=dhcp-vlan10-6E:5E:26:EB:E9:6C name=192-168-10-220.hq.lan ttl=15m
@@ -229,6 +246,7 @@
 /ip dns static add address=192.168.10.153 comment=dhcp-vlan10-00:12:41:32:A1:1F name=localhost.hq.lan ttl=15m
 /ip dns static add address=192.168.10.243 comment=dhcp-vlan10-4C:06:B7:00:54:1A name=192-168-10-243.hq.lan ttl=15m
 /ip dns static add address=192.168.10.223 comment=dhcp-vlan10-1C:91:80:B9:A6:45 name=guntapongs-air.hq.lan ttl=15m
+
 /ip firewall filter add action=accept chain=input comment="defconf: accept established,related,untracked" connection-state=established,related,untracked
 /ip firewall filter add action=drop chain=input comment="defconf: drop invalid" connection-state=invalid
 /ip firewall filter add action=accept chain=input comment="defconf: accept ICMP" protocol=icmp
