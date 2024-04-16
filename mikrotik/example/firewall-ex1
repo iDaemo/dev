@@ -1,0 +1,80 @@
+/ip firewall address-list 
+add address=0.0.0.0/8 comment="defconf: RFC6890" list=no_forward_ipv4 
+add address=169.254.0.0/16 comment="defconf: RFC6890" list=no_forward_ipv4 
+add address=224.0.0.0/4 comment="defconf: multicast" list=no_forward_ipv4 
+add address=255.255.255.255 comment="defconf: RFC6890" list=no_forward_ipv4 
+add address=127.0.0.0/8 comment="defconf: RFC6890" list=bad_ipv4 
+add address=192.0.0.0/24 comment="defconf: RFC6890" list=bad_ipv4 
+add address=192.0.2.0/24 comment="defconf: RFC6890 documentation" list=bad_ipv4 
+add address=198.51.100.0/24 comment="defconf: RFC6890 documentation" list=bad_ipv4 
+add address=203.0.113.0/24 comment="defconf: RFC6890 documentation" list=bad_ipv4 
+add address=240.0.0.0/4 comment="defconf: RFC6890 reserved" list=bad_ipv4 
+add address=0.0.0.0/8 comment="defconf: RFC6890" list=not_global_ipv4 
+add address=10.0.0.0/8 comment="defconf: RFC6890" list=not_global_ipv4 
+add address=100.64.0.0/10 comment="defconf: RFC6890" list=not_global_ipv4 
+add address=172.16.0.0/12 comment="defconf: RFC6890" list=not_global_ipv4 
+add address=169.254.0.0/16 comment="defconf: RFC6890" list=not_global_ipv4 
+add address=192.00.0/29 comment="defconf: RFC6890" list=not_global_ipv4 
+add address=192.168.0.0/16 comment="defconf: RFC6890" list=not_global_ipv4 
+add address=198.18.0.0/15 comment="defconf: RFC6890 benchmark" list=not_global_ipv4 
+add address=255.255.255.255 comment="defconf: RFC6890" list=not_global_ipv4 
+add address=224.0.0.0/4 comment="defconf: multicast" list=bad_src_ipv4 
+add address=255.255.255.255 comment="defconf: RFC6890" list=bad_src_ipv4 
+add address=0.0.0.0/8 comment="defconf: RFC6890" list=bad_dst_ipv4 
+add address=224.0.0.0/4 comment="defconf: RFC6890" list=bad_dst_ipv4 
+add address=100.82.0.0/16 comment=LAN-subnets list=LAN-subnets
+
+/ip firewall filter
+add action=accept chain=input comment="defconf: ICMP" protocol=icmp 
+add action=accept chain=input comment="defconf: accept established,related,untracked" connection-state=established,related,untracked 
+add action=drop chain=input comment="defconf: drop all not coming from LAN"
+in-interface-list=!LAN log=yes log-prefix="/drop/ - input not from LAN" 
+add action=accept chain=forward comment=
+"defconf: accept all that matches IPSec policy" disabled=yes
+ipsec-policy=in,ipsec add action=accept chain=forward comment=
+"defconf: accept established,related, untracked" connection-state=
+established,related,untracked add action=jump chain=forward comment="Detect DDOS" connection-state=new
+jump-target=detect-ddos add action=return chain=detect-ddos dst-limit=32,32,src-and-dst-addresses/10s add action=add-dst-to-address-list address-list=ddos-target
+address-list-timeout=10m chain=detect-ddos log=yes log-prefix=
+"/add-list/ - dst ddos list" add action=add-src-to-address-list address-list=ddos-attackers
+address-list-timeout=10m chain=detect-ddos log=yes log-prefix=
+"/add-list/ - src ddos list" add action=drop chain=forward comment=
+"defconf: drop all from WAN not DSTNATed" connection-nat-state=!dstnat
+connection-state=new in-interface-list=WAN add action=drop chain=forward comment="defconf: drop bad forward IPs" log=yes
+log-prefix="/drop/ - no_forward_ipv4 rule" src-address-list=
+no_forward_ipv4 add action=drop chain=forward comment="defconf: drop bad forward IPs"
+dst-address-list=no_forward_ipv4 log=yes log-prefix=
+"/drop/ - no_forward_ipv4 rule"
+
+/ip firewall raw add action=accept chain=prerouting comment=
+"defconf: enable for transparent firewall" disabled=yes add action=accept chain=prerouting comment="defconf: accept DHCP discover"
+dst-address=255.255.255.255 dst-port=67 in-interface-list=LAN protocol=udp src-address=0.0.0.0 src-port=68 add action=drop chain=prerouting comment="defconf: drop bogon IP's"
+src-address-list=bad_ipv4 add action=drop chain=prerouting comment="defconf: drop bogon IP's"
+dst-address-list=bad_ipv4 add action=drop chain=prerouting comment="defconf: drop bogon IP's"
+src-address-list=bad_src_ipv4 add action=drop chain=prerouting comment="defconf: drop bogon IP's"
+dst-address-list=bad_dst_ipv4 add action=drop chain=prerouting comment="defconf: drop non global from WAN"
+in-interface-list=WAN log=yes log-prefix="/drop/ - RAW not global"
+src-address-list=not_global_ipv4 add action=drop chain=prerouting comment=
+"defconf: drop forward to local lan from WAN" dst-address-list=
+LAN-subnets in-interface-list=WAN log=yes log-prefix=
+"/drop/ - RAW not LANsub from WAN" add action=drop chain=prerouting comment=
+"defconf: drop local if not from default IP range" in-interface-list=LAN
+log=yes log-prefix="/drop/ - RAW not LANsub from local" src-address-list=
+!LAN-subnets add action=drop chain=prerouting comment="defconf: drop bad UDP" port=0
+protocol=udp add action=jump chain=prerouting comment="defconf: jump to ICMP chain"
+jump-target=icmp4 protocol=icmp add action=jump chain=prerouting comment="defconf: jump to TCP chain"
+jump-target=bad_tcp protocol=tcp add action=accept chain=prerouting comment=
+"defconf: accept everything else from LAN" in-interface-list=LAN add action=accept chain=prerouting comment=
+"defconf: accept everything else from WAN" in-interface-list=WAN add action=accept chain=prerouting comment=
+"defconf: accept everything else from L2TP" in-interface-list=L2TP-list add action=drop chain=prerouting comment="defconf: drop the rest" add action=drop chain=prerouting dst-address-list=ddos-target log=yes
+log-prefix="/drop/ - RAW ddos rule" src-address-list=ddos-attackers add action=drop chain=bad_tcp comment="defconf: TCP flag filter" protocol=tcp
+tcp-flags=!fin,!syn,!rst,!ack add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=fin,syn add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=fin,rst add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=fin,!ack add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=fin,urg add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=syn,rst add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=rst,urg add action=drop chain=bad_tcp comment="defconf: TCP port 0 drop" port=0
+protocol=tcp add action=accept chain=icmp4 comment="defconf: echo" icmp-options=8:0
+protocol=icmp add action=accept chain=icmp4 comment="defconf: echo reply" icmp-options=0:0
+protocol=icmp add action=accept chain=icmp4 comment="defconf: port unreachable"
+icmp-options=3:3 protocol=icmp add action=accept chain=icmp4 comment="defconf: host unreachable"
+icmp-options=3:1 protocol=icmp add action=accept chain=icmp4 comment="defconf: net unreachable"
+icmp-options=3:0 protocol=icmp add action=accept chain=icmp4 comment="defconf: time exceeded " icmp-options=
+11:0-255 protocol=icmp add action=accept chain=icmp4 comment="defconf: protocol unreachable"
+icmp-options=3:2 protocol=icmp add action=accept chain=icmp4 comment="defconf: fragmentation needed"
+icmp-options=3:4 protocol=icmp add action=drop chain=icmp4 comment="defconf: drop other icmp" protocol=icmp

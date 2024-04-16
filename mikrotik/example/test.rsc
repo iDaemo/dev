@@ -15,15 +15,18 @@
 
 :delay 30s
 
+# name the device being configured
+/system identity set name=SonosHQ
+
 # setup bridge filter set no
 /interface bridge add igmp-snooping=yes igmp-version=3 name=BRI-TEST protocol-mode=none query-interval=30s vlan-filtering=no
 
 # assign ethernet ports
 /interface ethernet set [ find default-name=ether1 ] name=ether1-wan
 /interface ethernet set [ find default-name=ether2 ] name=ether2-oob
-#/interface ethernet set [ find default-name=ether3 ] name=ether3
-#/interface ethernet set [ find default-name=ether4 ] name=ether4
-#/interface ethernet set [ find default-name=ether5 ] name=ether5
+/interface ethernet set [ find default-name=ether3 ] name=ether3
+/interface ethernet set [ find default-name=ether4 ] name=ether4
+/interface ethernet set [ find default-name=ether5 ] name=ether5
 #/interface ethernet set [ find default-name=ether12 ] name=ether12-apfl2
 #/interface ethernet set [ find default-name=ether13 ] name=ether13-dvs
 #/interface ethernet set [ find default-name=ether15 ] name=ether5 
@@ -35,7 +38,7 @@
 # add connection to internet
 #/interface pppoe-client add add-default-route=yes disabled=no interface=ether1-wan name=Trueonline password=Password service-name=Trueonline use-peer-dns=no user=9605418601@fiberhome
 
-##### add wireguard
+##### add wireguard ## Dont forget to put public key here
 /interface wireguard add listen-port=13231 mtu=1420 name=wg-sonoshq 
 #### Peers
 /interface wireguard peers add allowed-address=10.0.0.2/32 comment=Gle interface=wg-sonoshq public-key="MaHvrXErTnQ4m7gfoRR0Kbz8zKnIM9C8LlnFu1WGXRg="
@@ -76,7 +79,7 @@
 /ip pool add name=POOL200 ranges=192.168.200.101-192.168.200.249
 /ip pool add name=POOL99 ranges=192.168.99.101-192.168.99.120
 
-/ip dhcp-client add disabled=yes interface=ether1-wan use-peer-dns=yes
+/ip dhcp-client add disabled=no interface=ether1-wan use-peer-dns=no
 
 # DHCP Server
 /ip dhcp-server add address-pool=POOL10 add-arp=yes interface=VLAN10-LAN lease-time=1d name=dhcp-vlan10 lease-script=dhcpleasestatic
@@ -91,8 +94,6 @@
 /ip dhcp-server network add address=192.168.200.0/24 dns-server=192.168.200.1 domain=hq.lan gateway=192.168.200.1
 /ip dhcp-server network add address=192.168.99.0/24 dns-server=192.168.99.11 domain=hq.lan gateway=192.168.99.1
 
-
-
 # Firewall disable or not mdms ipv6
 /interface bridge filter add action=drop chain=forward comment="Drop all IPv6 mDNS" disabled=yes dst-mac-address=33:33:00:00:00:FB/FF:FF:FF:FF:FF:FF log=yes log-prefix=drop.mdns.ipv6 mac-protocol=ipv6
 
@@ -103,6 +104,7 @@
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan100 pvid=100 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan200 pvid=200 trusted=yes
 
+
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=10
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=11
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=100
@@ -110,13 +112,13 @@
 /interface list member add interface=ether1-wan list=WAN
 /interface list member add interface=ether2-oob list=MGMT
 /interface list member add interface=ether3 list=InterfaceListVlan10
-/interface list member add interface=ether4 list=InterfaceListVlan10
+/interface list member add interface=ether4 list=InterfaceListVlan11
 #/interface list member add interface=ether5 list=InterfaceListVlan10
 
-#/interface list member add interface=VLAN10-LAN list=LAN
-#/interface list member add interface=VLAN11-WIFI list=LAN
-#/interface list member add interface=VLAN100-DANTE list=LAN
-#/interface list member add interface=VLAN200-LIGHTING list=LAN
+/interface list member add interface=VLAN10-LAN list=LAN
+/interface list member add interface=VLAN11-WIFI list=LAN
+/interface list member add interface=VLAN100-DANTE list=LAN
+/interface list member add interface=VLAN200-LIGHTING list=LAN
 /interface list member add interface=BRI-TEST list=LAN
 
 
@@ -126,11 +128,12 @@
 /ip address add address=192.168.11.1/24 interface=VLAN11-WIFI network=192.168.11.0
 /ip address add address=192.168.100.1/24 interface=VLAN100-DANTE network=192.168.100.0
 /ip address add address=192.168.200.1/24 interface=VLAN200-LIGHTING network=192.168.200.0
-/ip address add address=192.168.99.1/24 interface=ether2-oob network=192.168.99.0
+/ip address add address=192.168.99.1/24 interface=VLAN99-MGMT network=192.168.99.0
 #/ip address add address=192.168.0.1/24 interface=BRI-TEST network=192.168.0.0
 
 ###############################
-## Firewall Filter
+## Firewall Address List
+###############################
 /ip firewall address-list
 add address=0.0.0.0/8 comment="defconf: RFC6890" list=no_forward_ipv4
 add address=169.254.0.0/16 comment="defconf: RFC6890" list=no_forward_ipv4
@@ -147,12 +150,12 @@ add address=240.0.0.0/4 comment="defconf: RFC6890 reserved" list=bad_ipv4
 
 /ip firewall address-list
 add address=0.0.0.0/8 comment="defconf: RFC6890" list=not_global_ipv4
-add address=10.0.0.0/8 comment="defconf: RFC6890" list=not_global_ipv4
+#add address=10.0.0.0/8 comment="defconf: RFC6890" list=not_global_ipv4
 add address=100.64.0.0/10 comment="defconf: RFC6890" list=not_global_ipv4
 add address=169.254.0.0/16 comment="defconf: RFC6890" list=not_global_ipv4
 add address=172.16.0.0/12 comment="defconf: RFC6890" list=not_global_ipv4
 add address=192.0.0.0/29 comment="defconf: RFC6890" list=not_global_ipv4
-add address=192.168.0.0/16 comment="defconf: RFC6890" list=not_global_ipv4
+#add address=192.168.0.0/16 comment="defconf: RFC6890" list=not_global_ipv4
 add address=198.18.0.0/15 comment="defconf: RFC6890 benchmark" list=not_global_ipv4
 add address=255.255.255.255/32 comment="defconf: RFC6890" list=not_global_ipv4
 
@@ -164,13 +167,13 @@ add address=224.0.0.0/4 comment="defconf: RFC6890" list=bad_dst_ipv4
 
 # Firewall Raw rule
 /ip firewall raw
-add action=accept chain=prerouting comment="defconf: enable for transparent firewall" disabled=yes
+add action=accept chain=prerouting comment="defconf: enable for transparent firewall" disabled=no
 add action=accept chain=prerouting comment="defconf: accept DHCP discover" dst-address=255.255.255.255 dst-port=67 in-interface-list=LAN protocol=udp src-address=0.0.0.0 src-port=68
-add action=drop chain=prerouting comment="defconf: drop bogon IP's" src-address-list=bad_ipv4
-add action=drop chain=prerouting comment="defconf: drop bogon IP's" dst-address-list=bad_ipv4
-add action=drop chain=prerouting comment="defconf: drop bogon IP's" src-address-list=bad_src_ipv4
-add action=drop chain=prerouting comment="defconf: drop bogon IP's" dst-address-list=bad_dst_ipv4
-add action=drop chain=prerouting comment="defconf: drop non global from WAN" src-address-list=not_global_ipv4 in-interface-list=WAN
+add action=drop chain=prerouting comment="defconf: drop bogon IP's" src-address-list=bad_ipv4 disabled=yes
+add action=drop chain=prerouting comment="defconf: drop bogon IP's" dst-address-list=bad_ipv4 disabled=yes
+add action=drop chain=prerouting comment="defconf: drop bogon IP's" src-address-list=bad_src_ipv4 disabled=yes
+add action=drop chain=prerouting comment="defconf: drop bogon IP's" dst-address-list=bad_dst_ipv4 disabled=yes
+add action=drop chain=prerouting comment="defconf: drop non global from WAN" src-address-list=not_global_ipv4 in-interface-list=WAN disabled=yes
 
 #add action=drop chain=prerouting comment="defconf: drop forward to local lan from WAN" in-interface-list=WAN dst-address=192.168.88.0/24
 #add action=drop chain=prerouting comment="defconf: drop local if not from default IP range" in-interface-list=LAN src-address=!192.168.88.0/24
@@ -194,21 +197,28 @@ add action=drop chain=bad_tcp comment="defconf: TCP port 0 drop" port=0 protocol
 # Filter
 /ip firewall filter
 add action=accept chain=input comment="defconf: accept ICMP after RAW" protocol=icmp
+add action=accept chain=input comment="defconf: to the world" dst-port=53 in-interface=all-vlan protocol=udp
+add action=accept chain=input comment="defconf: to the world" dst-port=53 in-interface=all-vlan protocol=tcp
 add action=accept chain=input comment="defconf: accept established,related,untracked" connection-state=established,related,untracked
-#allow
+
 add chain=input action=accept in-interface-list=MGMT comment="Allow Base_Vlan Full Access"
 add chain=input action=accept in-interface-list=LAN comment="Allow Base_Vlan Full Access"
 add chain=input action=accept in-interface=wg-sonoshq  comment="Allow Wireguard"
-
 add action=drop chain=input comment="defconf: drop all not coming from LAN" in-interface-list=!LAN
 
 /ip firewall filter
-add action=fasttrack-connection chain=forward comment="defconf: fasttrack" connection-state=established,related
+add action=fasttrack-connection chain=forward comment="defconf: fasttrack" connection-state=established,related 
 add action=accept chain=forward comment="defconf: accept established,related, untracked" connection-state=established,related,untracked
+
+add action=accept chain=forward comment="Allow BASE / mgmt to connect all VLANs" in-interface-list=MGMT out-interface=all-vlan
+add action=accept chain=forward disabled=no in-interface-list=InterfaceListVlan10 out-interface-list=InterfaceListVlan11
+add action=accept chain=forward disabled=no in-interface-list=InterfaceListVlan11 out-interface-list=InterfaceListVlan10
+
+
 add action=drop chain=forward comment="defconf: drop invalid" connection-state=invalid
 add action=drop chain=forward comment="defconf:  drop all from WAN not DSTNATed" connection-nat-state=!dstnat connection-state=new in-interface-list=WAN
-add action=drop chain=forward src-address-list=no_forward_ipv4 comment="defconf: drop bad forward IPs"
-add action=drop chain=forward dst-address-list=no_forward_ipv4 comment="defconf: drop bad forward IPs"
+add action=drop chain=forward src-address-list=no_forward_ipv4 comment="defconf: drop bad forward IPs" disabled=yes
+add action=drop chain=forward dst-address-list=no_forward_ipv4 comment="defconf: drop bad forward IPs" disabled=yes
 
 /ip firewall nat
 add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface-list=WAN
@@ -228,21 +238,49 @@ add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface-l
 # System Tidy
 #######################################
 
+/ip service disable telnet,ftp,www,www-ssl,api,ssh,api-ssl
+/ip service set ssh port=22022
+/ip ssh set strong-crypto=yes
+
 /system logging action add bsd-syslog=yes name=syslog remote=192.168.10.250 syslog-facility=syslog target=remote
 /ip cloud set ddns-enabled=no ddns-update-interval=1d update-time=no
 /system ntp client servers add address=time.cloudflare.com
 /system ntp client set enabled=yes
 /system clock set time-zone-name=Asia/Bangkok
-/system note set show-at-login=noๆ
-/ip service disable telnet,ftp,www,www-ssl,api,ssh,api-ssl
-/ip service set ssh port=22022
-/ip ssh set strong-crypto=yes
+/system note set show-at-login=no
 /ip proxy set enabled=no
 /ip upnp set enabled=no
 /ip socks set enabled=no
 /tool bandwidth-server set enabled=no
 /user add name=sonos group=full password=33338888
 /user remove 0
+
+#######################################
+# Manage some scripts
+#######################################
+/system script add dont-require-permissions=yes name=dhcp_leadstatic owner=sonos policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local lanDomain;\r\
+    \n:local lanHostname;\r\
+    \n\r\
+    \n:set lanDomain \".lan\";\r\
+    \n\r\
+    \n:local tHostname;\r\
+    \n:local tAddress;\r\
+    \n\r\
+    \n:if (\$leaseBound = 1) do={\r\
+    \n    :set lanHostname (\$\"lease-hostname\" . \$lanDomain);\r\
+    \n\r\
+    \n    /ip dns static;\r\
+    \n    :foreach k,v in=[find] do={\r\
+    \n        :set tHostname [get \$v \"name\"];\r\
+    \n        :set tAddress [get \$v \"address\"];\r\
+    \n        :if (\$tHostname = \$lanHostname) do={\r\
+    \n            remove \$v ;\r\
+    \n            :log info \"Removed old static DNS entry: \$tHostname => \$tAddress\" ;\r\
+    \n        };\r\
+    \n    };\r\
+    \n    /ip dns static add name=\"\$lanHostname\" address=\"\$leaseActIP\" ;\r\
+    \n    :log info \"Added new static DNS entry: \$lanHostname => \$leaseActIP\" ;\r\
+    \n};"
 
 #######################################
 # Turn on VLAN mode
