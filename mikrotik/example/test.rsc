@@ -79,146 +79,80 @@
 /ip dhcp-server add address-pool=POOL11 interface=VLAN11-WIFI lease-time=1d name=dhcp-vlan11 lease-script=dhcpleasestatic
 /ip dhcp-server add address-pool=POOL100 interface=VLAN100-DANTE  lease-time=1d name=dhcp-vlan100 lease-script=dhcpleasestatic
 /ip dhcp-server add address-pool=POOL200 interface=VLAN200-LIGHTING lease-time=1d name=dhcp-vlan200 lease-script=dhcpleasestatic
-#/ip dhcp-server add address-pool=POOL99 interface=VLAN99-MGMT lease-time=1d name=dhcp-vlan99 lease-script=dhcpleasestatic
+/ip dhcp-server add address-pool=POOL99 interface=VLAN99-MGMT lease-time=1d name=dhcp-vlan99 lease-script=dhcpleasestatic
 # DHCP Server Network
 /ip dhcp-server network add address=192.168.10.0/24 dns-server=192.168.10.1 domain=.sonoshq.lan gateway=192.168.10.1
 /ip dhcp-server network add address=192.168.11.0/24 dns-server=192.168.11.1 domain=.sonoshqhq.lan gateway=192.168.11.1
 /ip dhcp-server network add address=192.168.100.0/24 dns-server=192.168.100.1 domain=.sonoshqhq.lan gateway=192.168.100.1
 /ip dhcp-server network add address=192.168.200.0/24 dns-server=192.168.200.1 domain=.sonoshqhq.lan gateway=192.168.200.1
 /ip dhcp-server network add address=192.168.99.0/24 dns-server=192.168.99.11 domain=.sonoshqhq.lan gateway=192.168.99.1
-/ip dhcp-client add disabled=no interface=ether1-wan use-peer-dns=no
+
+/ip dhcp-client add disabled=no interface=ether1-wan add-default-route=yes use-peer-dns=no 
 
 # Firewall disable or not mdms ipv6
 /interface bridge filter add action=drop chain=forward comment="Drop all IPv6 mDNS" disabled=no dst-mac-address=33:33:00:00:00:FB/FF:FF:FF:FF:FF:FF log=yes log-prefix=drop.mdns.ipv6 mac-protocol=ipv6
 
 # Add bridge port selective to access vlan
-/interface bridge port add bridge=BRI-TEST fast-leave=yes frame-types=admit-only-vlan-tagged interface=ether5 trusted=yes
-/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan10 pvid=10 trusted=yes
-/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan11 pvid=11 trusted=yes
-/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan100 pvid=100 trusted=yes
-/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan200 pvid=200 trusted=yes
+/interface bridge port add bridge=BRI-TEST fast-leave=yes frame-types=admit-only-vlan-tagged interface=ether5
+/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan10 pvid=10
+/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan11 pvid=11
+/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan100 pvid=100
+/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan200 pvid=200
+/interface bridge port add bridge=BRI-TEST frame-types=admin-all [find interface=ether2]
 
 
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=10
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=11
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=100
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether5  vlan-ids=200
+/interface bridge vlan add bridge=BRI-TEST vlan-ids=10 tagged=BRI-TEST,ether5 untagged=ether3
+/interface bridge vlan add bridge=BRI-TEST vlan-ids=11 tagged=BRI-TEST,ether5  untagged=ether4
+/interface bridge vlan add bridge=BRI-TEST vlan-ids=100 tagged=BRI-TEST,ether5  
+/interface bridge vlan add bridge=BRI-TEST  vlan-ids=200 tagged=BRI-TEST,ether5 
+/interface list member add interface=BRI-TEST list=LAN
 /interface list member add interface=ether1-wan list=WAN
 /interface list member add interface=ether2-oob list=MGMT
 /interface list member add interface=ether3 list=InterfaceListVlan10
 /interface list member add interface=ether4 list=InterfaceListVlan11
 #/interface list member add interface=ether5 list=InterfaceListVlan10
-
-/interface list member add interface=VLAN10-LAN list=LAN
-/interface list member add interface=VLAN11-WIFI list=LAN
-/interface list member add interface=VLAN100-DANTE list=LAN
-/interface list member add interface=VLAN200-LIGHTING list=LAN
-/interface list member add interface=BRI-TEST list=LAN
-
+#/interface list member add interface=VLAN10-LAN list=LAN
+#/interface list member add interface=VLAN11-WIFI list=LAN
+#/interface list member add interface=VLAN100-DANTE list=LAN
+#/interface list member add interface=VLAN200-LIGHTING list=LAN
 
 ## IP interfaces
 
-/ip address add address=192.168.99.1/24 interface=ether2-oob
+/ip address add address=192.168.99.1/24 interface=VLAN99-MGMT network=192.168.99.0
 /ip address add address=10.0.0.1/24 interface=wg-sonoshq network=10.0.0.0
 /ip address add address=192.168.10.1/24 interface=VLAN10-LAN network=192.168.10.0
 /ip address add address=192.168.11.1/24 interface=VLAN11-WIFI network=192.168.11.0
 /ip address add address=192.168.100.1/24 interface=VLAN100-DANTE network=192.168.100.0
 /ip address add address=192.168.200.1/24 interface=VLAN200-LIGHTING network=192.168.200.0
-/ip address add address=192.168.99.1/24 interface=VLAN99-MGMT network=192.168.99.0
+#/ip address add address=192.168.99.1/24 interface=VLAN99-MGMT network=192.168.99.0
 #/ip address add address=192.168.0.1/24 interface=BRI-TEST network=192.168.0.0
-
-
-###############################
-## Firewall Address List
-###############################
-/ip firewall address-list
-add address=0.0.0.0/8 comment="defconf: RFC6890" list=no_forward_ipv4
-add address=169.254.0.0/16 comment="defconf: RFC6890" list=no_forward_ipv4
-add address=224.0.0.0/4 comment="defconf: multicast" list=no_forward_ipv4
-add address=255.255.255.255/32 comment="defconf: RFC6890" list=no_forward_ipv4
-
-/ip firewall address-list
-add address=127.0.0.0/8 comment="defconf: RFC6890" list=bad_ipv4
-add address=192.0.0.0/24 comment="defconf: RFC6890" list=bad_ipv4
-add address=192.0.2.0/24 comment="defconf: RFC6890 documentation" list=bad_ipv4
-add address=198.51.100.0/24 comment="defconf: RFC6890 documentation" list=bad_ipv4
-add address=203.0.113.0/24 comment="defconf: RFC6890 documentation" list=bad_ipv4
-add address=240.0.0.0/4 comment="defconf: RFC6890 reserved" list=bad_ipv4
-
-/ip firewall address-list
-add address=0.0.0.0/8 comment="defconf: RFC6890" list=not_global_ipv4
-#add address=10.0.0.0/8 comment="defconf: RFC6890" list=not_global_ipv4
-add address=100.64.0.0/10 comment="defconf: RFC6890" list=not_global_ipv4
-add address=169.254.0.0/16 comment="defconf: RFC6890" list=not_global_ipv4
-add address=172.16.0.0/12 comment="defconf: RFC6890" list=not_global_ipv4
-add address=192.0.0.0/29 comment="defconf: RFC6890" list=not_global_ipv4
-#add address=192.168.0.0/16 comment="defconf: RFC6890" list=not_global_ipv4
-add address=198.18.0.0/15 comment="defconf: RFC6890 benchmark" list=not_global_ipv4
-add address=255.255.255.255/32 comment="defconf: RFC6890" list=not_global_ipv4
-
-/ip firewall address-list
-add address=224.0.0.0/4 comment="defconf: multicast" list=bad_src_ipv4
-add address=255.255.255.255/32 comment="defconf: RFC6890" list=bad_src_ipv4
-add address=0.0.0.0/8 comment="defconf: RFC6890" list=bad_dst_ipv4
-add address=224.0.0.0/4 comment="defconf: RFC6890" list=bad_dst_ipv4
-
-# Firewall Raw rule
-/ip firewall raw
-add action=accept chain=prerouting comment="defconf: enable for transparent firewall" disabled=no
-add action=accept chain=prerouting comment="defconf: accept DHCP discover" dst-address=255.255.255.255 dst-port=67 in-interface-list=LAN protocol=udp src-address=0.0.0.0 src-port=68
-add action=drop chain=prerouting comment="defconf: drop bogon IP's" src-address-list=bad_ipv4 disabled=yes
-add action=drop chain=prerouting comment="defconf: drop bogon IP's" dst-address-list=bad_ipv4 disabled=yes
-add action=drop chain=prerouting comment="defconf: drop bogon IP's" src-address-list=bad_src_ipv4 disabled=yes
-add action=drop chain=prerouting comment="defconf: drop bogon IP's" dst-address-list=bad_dst_ipv4 disabled=yes
-add action=drop chain=prerouting comment="defconf: drop non global from WAN" src-address-list=not_global_ipv4 in-interface-list=WAN disabled=yes
-
-#add action=drop chain=prerouting comment="defconf: drop forward to local lan from WAN" in-interface-list=WAN dst-address=192.168.88.0/24
-#add action=drop chain=prerouting comment="defconf: drop local if not from default IP range" in-interface-list=LAN src-address=!192.168.88.0/24
-
-add action=drop chain=prerouting comment="defconf: drop bad UDP" port=0 protocol=udp
-add action=jump chain=prerouting comment="defconf: jump to TCP chain" jump-target=bad_tcp protocol=tcp
-add action=accept chain=prerouting comment="defconf: accept everything else from LAN" in-interface-list=LAN
-add action=accept chain=prerouting comment="defconf: accept everything else from WAN" in-interface-list=WAN
-add action=drop chain=prerouting comment="defconf: drop the rest"
-
-/ip firewall raw
-add action=drop chain=bad_tcp comment="defconf: TCP flag filter" protocol=tcp tcp-flags=!fin,!syn,!rst,!ack
-add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=fin,syn
-add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=fin,rst
-add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=fin,!ack
-add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=fin,urg
-add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=syn,rst
-add action=drop chain=bad_tcp comment=defconf protocol=tcp tcp-flags=rst,urg
-add action=drop chain=bad_tcp comment="defconf: TCP port 0 drop" port=0 protocol=tcp
 
 # Filter
 /ip firewall filter
-add action=accept chain=input comment="defconf: accept ICMP after RAW" protocol=icmp
-add action=accept chain=input comment="defconf: to the world" dst-port=53 in-interface=all-vlan protocol=udp
-add action=accept chain=input comment="defconf: to the world" dst-port=53 in-interface=all-vlan protocol=tcp
-add action=accept chain=input comment="defconf: accept established,related,untracked" connection-state=established,related,untracked
+add action=accept chain=input comment="accept ICMP after RAW" protocol=icmp
+add action=accept chain=input comment="to the world" dst-port=53 in-interface=all-vlan protocol=udp
+add action=accept chain=input comment="to the world" dst-port=53 in-interface=all-vlan protocol=tcp
+add action=accept chain=input comment="accept established,related,untracked" connection-state=established,related,untracked
 
-add chain=input action=accept in-interface-list=MGMT comment="Allow Base_Vlan Full Access"
-add chain=input action=accept in-interface-list=LAN comment="Allow Base_Vlan Full Access"
 add chain=input action=accept in-interface=wg-sonoshq  comment="Allow Wireguard"
-add action=drop chain=input comment="defconf: drop all not coming from LAN" in-interface-list=!LAN
+add chain=input action=accept in-interface=VLAN99-MGMT  comment="Allow Base_Vlan Full Access"
+#add chain=input action=accept in-interface-list=LAN comment="Allow Base_Vlan Full Access"
+
+add action=drop chain=input comment="Drop everything else in input"
+
 
 /ip firewall filter
-add action=fasttrack-connection chain=forward comment="defconf: fasttrack" connection-state=established,related 
-add action=accept chain=forward comment="defconf: accept established,related, untracked" connection-state=established,related,untracked
+add action=fasttrack-connection chain=forward comment="fasttrack" connection-state=established,related 
+add action=accept chain=forward comment="accept established,related, untracked" connection-state=established,related,untracked
 
-add action=accept chain=forward comment="Allow BASE / mgmt to connect all VLANs" in-interface-list=MGMT out-interface=all-vlan
+add action=accept chain=forward comment="Allow BASE / mgmt to connect all VLANs" in-interface=VLAN99-MGMT out-interface=all-vlan
 add action=accept chain=forward disabled=no in-interface-list=InterfaceListVlan10 out-interface-list=InterfaceListVlan11
 add action=accept chain=forward disabled=no in-interface-list=InterfaceListVlan11 out-interface-list=InterfaceListVlan10
 
-
-add action=drop chain=forward comment="defconf: drop invalid" connection-state=invalid
-add action=drop chain=forward comment="defconf:  drop all from WAN not DSTNATed" connection-nat-state=!dstnat connection-state=new in-interface-list=WAN
-add action=drop chain=forward src-address-list=no_forward_ipv4 comment="defconf: drop bad forward IPs" disabled=yes
-add action=drop chain=forward dst-address-list=no_forward_ipv4 comment="defconf: drop bad forward IPs" disabled=yes
+add action=drop chain=forward comment="Drop all" disabled=yes
 
 /ip firewall nat
-add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface-list=WAN
+add action=masquerade chain=srcnat comment="masquerade" out-interface-list=WAN
 
 
 
