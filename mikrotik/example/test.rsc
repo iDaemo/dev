@@ -258,7 +258,7 @@ add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface-l
 #######################################
 # Manage some scripts
 #######################################
-/system script add dont-require-permissions=yes name=dhcp_leadstatic owner=sonos policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local lanDomain;\r\
+/system script add dont-require-permissions=no name=dhcp_leadstatic owner=sonos policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local lanDomain;\r\
     \n:local lanHostname;\r\
     \n\r\
     \n:set lanDomain \".lan\";\r\
