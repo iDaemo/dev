@@ -56,14 +56,14 @@
 /interface wireguard peers add allowed-address=10.0.0.40/32,192.168.40.0/24 comment="Raynue 192.168.40.0/24" interface=wg-sonoshq public-key="bZjIr4w5B8LsOO0onCK1ZmFthCygs23aQvTSXemV/B4="
 
 # start to segment vlan
-/interface list add name=WAN
-/interface list add name=LAN
-/interface list add name=MGMT
 /interface vlan add interface=BRI-TEST name=VLAN10-LAN vlan-id=10
 /interface vlan add interface=BRI-TEST name=VLAN11-WIFI vlan-id=11
 /interface vlan add interface=BRI-TEST name=VLAN100-DANTE vlan-id=100
 /interface vlan add interface=BRI-TEST name=VLAN200-LIGHTING vlan-id=200
 /interface vlan add interface=BRI-TEST name=VLAN99-MGMT vlan-id=99
+/interface list add name=WAN
+/interface list add name=LAN
+/interface list add name=MGMT
 /interface list add name=InterfaceListVlan10
 /interface list add name=InterfaceListVlan11
 /interface list add name=InterfaceListVlan100
@@ -76,12 +76,11 @@
 /ip pool add name=POOL200 ranges=192.168.200.101-192.168.200.249
 /ip pool add name=POOL99 ranges=192.168.99.101-192.168.99.120
 # DHCP Server Network
-/ip dhcp-server network add address=192.168.10.0/24 dns-server=192.168.10.1 domain=.sonoshq.lan gateway=192.168.10.1
-/ip dhcp-server network add address=192.168.11.0/24 dns-server=192.168.11.1 domain=.sonoshqhq.lan gateway=192.168.11.1
-/ip dhcp-server network add address=192.168.100.0/24 dns-server=192.168.100.1 domain=.sonoshqhq.lan gateway=192.168.100.1
-/ip dhcp-server network add address=192.168.200.0/24 dns-server=192.168.200.1 domain=.sonoshqhq.lan gateway=192.168.200.1
-/ip dhcp-server network add address=192.168.99.0/24 dns-server=192.168.99.11 domain=.sonoshqhq.lan gateway=192.168.99.1
-
+/ip dhcp-server network add address=192.168.10.0/24 dns-server=192.168.10.1 domain=hq.lan gateway=192.168.10.1
+/ip dhcp-server network add address=192.168.11.0/24 dns-server=192.168.11.1 domain=hq.lan gateway=192.168.11.1
+/ip dhcp-server network add address=192.168.100.0/24 dns-server=192.168.100.1 domain=hq.lan gateway=192.168.100.1
+/ip dhcp-server network add address=192.168.200.0/24 dns-server=192.168.200.1 domain=hq.lan gateway=192.168.200.1
+/ip dhcp-server network add address=192.168.99.0/24 dns-server=192.168.99.11 domain=hq.lan gateway=192.168.99.1
 # DHCP Server
 /ip dhcp-server add address-pool=POOL10 interface=VLAN10-LAN lease-time=1d name=dhcp-vlan10 lease-script=dhcpleasestatic
 /ip dhcp-server add address-pool=POOL11 interface=VLAN11-WIFI lease-time=1d name=dhcp-vlan11 lease-script=dhcpleasestatic
@@ -101,6 +100,7 @@
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan11 pvid=11
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan100 pvid=100
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan200 pvid=200
+
 /interface bridge port add bridge=BRI-TEST frame-types=admit-all interface=VLAN99-MGMT pvid=99
 /interface bridge vlan add bridge=BRI-TEST vlan-ids=10 tagged=BRI-TEST,ether5 untagged=ether3
 /interface bridge vlan add bridge=BRI-TEST vlan-ids=11 tagged=BRI-TEST,ether5  untagged=ether4
@@ -131,11 +131,13 @@
 
 # Filter
 /ip firewall filter
+add action=accept chain=input dst-address=192.168.88.5 dst-port=22022,8291 protocol=tcp src-address-list="Router Admins"
+add action=accept chain=input in-interface=wg-sonoshq  comment="Allow Admin"
 add action=accept chain=input comment="accept ICMP after RAW" protocol=icmp
-add action=accept chain=input  in-interface=wg-sonoshq  comment="Allow Wireguard"
-add action=accept chain=input in-interface=VLAN99-MGMT  comment="Allow Base_Vlan Full Access"
 add action=accept chain=input comment="to the world" dst-port=53 in-interface=all-vlan protocol=udp
 add action=accept chain=input comment="to the world" dst-port=53 in-interface=all-vlan protocol=tcp
+add action=accept chain=input  in-interface=wg-sonoshq  comment="Allow Wireguard"
+add action=accept chain=input in-interface=VLAN99-MGMT  comment="Allow Base_Vlan Full Access"
 add action=accept chain=input comment="accept established,related,untracked" connection-state=established,related,untracked
 #add chain=input action=accept in-interface-list=LAN comment="Allow Base_Vlan Full Access"
 
@@ -145,8 +147,8 @@ add action=drop chain=input comment="Drop everything else in input"
 /ip firewall filter
 add action=fasttrack-connection chain=forward comment="fasttrack" connection-state=established,related 
 add action=accept chain=forward comment="accept established,related, untracked" connection-state=established,related,untracked
-
-add action=accept chain=forward comment="Allow BASE / mgmt to connect all VLANs" in-interface=VLAN99-MGMT out-interface=all-vlan
+add action=accept chain=forward comment="Allow Wireguard"in-interface=wg-sonoshq
+add action=accept chain=forward comment="Allow MGMT to connect all VLANs" in-interface=VLAN99-MGMT out-interface=all-vlan
 add action=accept chain=forward disabled=no in-interface-list=InterfaceListVlan10 out-interface-list=InterfaceListVlan11
 add action=accept chain=forward disabled=no in-interface-list=InterfaceListVlan11 out-interface-list=InterfaceListVlan10
 
@@ -162,15 +164,15 @@ add action=masquerade chain=srcnat comment="masquerade" out-interface-list=WAN
 #######################################
 
 # Ensure only visibility and availability from BASE_VLAN, the MGMT network
-/ip neighbor discovery-settings set discover-interface-list=LAN
+/ip neighbor discovery-settings set discover-interface-list=all
 /tool mac-server mac-winbox set allowed-interface-list=LAN
-/tool mac-server set allowed-interface-list=LAN
+#/tool mac-server set allowed-interface-list=LAN
 
 #######################################
 # System Tidy
 #######################################
 
-/ip service disable telnet,ftp,www,www-ssl,api,ssh,api-ssl
+/ip service disable telnet,ftp,www,www-ssl,api,api-ssl
 /ip service set ssh port=22022
 /ip ssh set strong-crypto=yes
 /ip cloud set ddns-enabled=no ddns-update-interval=1d update-time=no

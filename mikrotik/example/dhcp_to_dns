@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 ## this one will work
-:local domains [:toarray "idaemon-room.local"]
+:local domains [:toarray ".hq.local"]
 :local dnsttl "100m"
 :local magiccomment "automatic-from-dhcp (magic comment)"
 :local activehosts [:toarray ""]

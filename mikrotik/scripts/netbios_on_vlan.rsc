@@ -1,6 +1,5 @@
-netbios dns to mikrotik
+#netbios dns to mikrotik
 
-```
 :local lease [/ip dhcp-server lease print active as-value where mac-address=$leaseActMAC];
 :local hostname $"lease-hostname";
 :local expires ($lease->0->"expires-after");
@@ -20,4 +19,3 @@ netbios dns to mikrotik
   /ip dns static remove [find name="$hostname$tld"]
  }
 }
-```
