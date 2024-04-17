@@ -56,9 +56,6 @@
 /interface wireguard peers add allowed-address=10.0.0.40/32,192.168.40.0/24 comment="Raynue 192.168.40.0/24" interface=wg-sonoshq public-key="bZjIr4w5B8LsOO0onCK1ZmFthCygs23aQvTSXemV/B4="
 
 # start to segment vlan
-/interface list add name=WAN
-/interface list add name=LAN
-/interface list add name=MGMT
 /interface vlan add interface=BRI-TEST name=VLAN10-LAN vlan-id=10
 /interface vlan add interface=BRI-TEST name=VLAN11-WIFI vlan-id=11
 /interface vlan add interface=BRI-TEST name=VLAN100-DANTE vlan-id=100
@@ -70,8 +67,6 @@
 /interface list add name=InterfaceListVlan200
 /interface detect-internet set detect-interface-list=WAN
 
-# Assign IP just for Management OOB port
-#/ip address add address=192.168.99.1/24 interface=MGMT
 # IP Pool
 /ip pool add name=POOL10 ranges=192.168.10.101-192.168.10.249
 /ip pool add name=POOL11 ranges=192.168.11.101-192.168.11.249
@@ -79,23 +74,22 @@
 /ip pool add name=POOL200 ranges=192.168.200.101-192.168.200.249
 /ip pool add name=POOL99 ranges=192.168.99.101-192.168.99.120
 
+# DHCP Server
+/ip dhcp-server add address-pool=POOL10 interface=VLAN10-LAN lease-time=1d name=dhcp-vlan10 lease-script=dhcpleasestatic
+/ip dhcp-server add address-pool=POOL11 interface=VLAN11-WIFI lease-time=1d name=dhcp-vlan11 lease-script=dhcpleasestatic
+/ip dhcp-server add address-pool=POOL100 interface=VLAN100-DANTE  lease-time=1d name=dhcp-vlan100 lease-script=dhcpleasestatic
+/ip dhcp-server add address-pool=POOL200 interface=VLAN200-LIGHTING lease-time=1d name=dhcp-vlan200 lease-script=dhcpleasestatic
+#/ip dhcp-server add address-pool=POOL99 interface=VLAN99-MGMT lease-time=1d name=dhcp-vlan99 lease-script=dhcpleasestatic
+# DHCP Server Network
+/ip dhcp-server network add address=192.168.10.0/24 dns-server=192.168.10.1 domain=.sonoshq.lan gateway=192.168.10.1
+/ip dhcp-server network add address=192.168.11.0/24 dns-server=192.168.11.1 domain=.sonoshqhq.lan gateway=192.168.11.1
+/ip dhcp-server network add address=192.168.100.0/24 dns-server=192.168.100.1 domain=.sonoshqhq.lan gateway=192.168.100.1
+/ip dhcp-server network add address=192.168.200.0/24 dns-server=192.168.200.1 domain=.sonoshqhq.lan gateway=192.168.200.1
+/ip dhcp-server network add address=192.168.99.0/24 dns-server=192.168.99.11 domain=.sonoshqhq.lan gateway=192.168.99.1
 /ip dhcp-client add disabled=no interface=ether1-wan use-peer-dns=no
 
-# DHCP Server
-/ip dhcp-server add address-pool=POOL10 add-arp=yes interface=VLAN10-LAN lease-time=1d name=dhcp-vlan10 lease-script=dhcpleasestatic
-/ip dhcp-server add address-pool=POOL11 add-arp=yes interface=VLAN11-WIFI lease-time=1d name=dhcp-vlan11 lease-script=dhcpleasestatic
-/ip dhcp-server add address-pool=POOL100 add-arp=yes interface=VLAN100-DANTE  lease-time=1d name=dhcp-vlan100 lease-script=dhcpleasestatic
-/ip dhcp-server add address-pool=POOL200 add-arp=yes interface=VLAN200-LIGHTING lease-time=1d name=dhcp-vlan200 lease-script=dhcpleasestatic
-/ip dhcp-server add address-pool=POOL99 add-arp=yes interface=VLAN99-MGMT lease-time=1d name=dhcp-vlan99 lease-script=dhcpleasestatic
-# DHCP Server Network
-/ip dhcp-server network add address=192.168.10.0/24 dns-server=192.168.10.1 domain=hq.lan gateway=192.168.10.1
-/ip dhcp-server network add address=192.168.11.0/24 dns-server=192.168.11.1 domain=hq.lan gateway=192.168.11.1
-/ip dhcp-server network add address=192.168.100.0/24 dns-server=192.168.100.1 domain=hq.lan gateway=192.168.100.1
-/ip dhcp-server network add address=192.168.200.0/24 dns-server=192.168.200.1 domain=hq.lan gateway=192.168.200.1
-/ip dhcp-server network add address=192.168.99.0/24 dns-server=192.168.99.11 domain=hq.lan gateway=192.168.99.1
-
 # Firewall disable or not mdms ipv6
-/interface bridge filter add action=drop chain=forward comment="Drop all IPv6 mDNS" disabled=yes dst-mac-address=33:33:00:00:00:FB/FF:FF:FF:FF:FF:FF log=yes log-prefix=drop.mdns.ipv6 mac-protocol=ipv6
+/interface bridge filter add action=drop chain=forward comment="Drop all IPv6 mDNS" disabled=no dst-mac-address=33:33:00:00:00:FB/FF:FF:FF:FF:FF:FF log=yes log-prefix=drop.mdns.ipv6 mac-protocol=ipv6
 
 # Add bridge port selective to access vlan
 /interface bridge port add bridge=BRI-TEST fast-leave=yes frame-types=admit-only-vlan-tagged interface=ether5 trusted=yes
@@ -123,6 +117,8 @@
 
 
 ## IP interfaces
+
+/ip address add address=192.168.99.1/24 interface=ether2-oob
 /ip address add address=10.0.0.1/24 interface=wg-sonoshq network=10.0.0.0
 /ip address add address=192.168.10.1/24 interface=VLAN10-LAN network=192.168.10.0
 /ip address add address=192.168.11.1/24 interface=VLAN11-WIFI network=192.168.11.0
@@ -130,6 +126,7 @@
 /ip address add address=192.168.200.1/24 interface=VLAN200-LIGHTING network=192.168.200.0
 /ip address add address=192.168.99.1/24 interface=VLAN99-MGMT network=192.168.99.0
 #/ip address add address=192.168.0.1/24 interface=BRI-TEST network=192.168.0.0
+
 
 ###############################
 ## Firewall Address List
