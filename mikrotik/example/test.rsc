@@ -19,7 +19,7 @@
 /system identity set name=SonosHQ
 
 # setup bridge filter set no
-/interface bridge add igmp-snooping=yes igmp-version=3 name=BRI-TEST protocol-mode=none query-interval=30s vlan-filtering=no
+/interface bridge add name=BRI-TEST igmp-snooping=yes igmp-version=3 protocol-mode=none query-interval=30s vlan-filtering=no
 
 # assign ethernet ports
 /interface ethernet set [ find default-name=ether1 ] name=ether1-wan
@@ -56,6 +56,9 @@
 /interface wireguard peers add allowed-address=10.0.0.40/32,192.168.40.0/24 comment="Raynue 192.168.40.0/24" interface=wg-sonoshq public-key="bZjIr4w5B8LsOO0onCK1ZmFthCygs23aQvTSXemV/B4="
 
 # start to segment vlan
+/interface list add name=WAN
+/interface list add name=LAN
+/interface list add name=MGMT
 /interface vlan add interface=BRI-TEST name=VLAN10-LAN vlan-id=10
 /interface vlan add interface=BRI-TEST name=VLAN11-WIFI vlan-id=11
 /interface vlan add interface=BRI-TEST name=VLAN100-DANTE vlan-id=100
@@ -65,7 +68,6 @@
 /interface list add name=InterfaceListVlan11
 /interface list add name=InterfaceListVlan100
 /interface list add name=InterfaceListVlan200
-/interface detect-internet set detect-interface-list=WAN
 
 # IP Pool
 /ip pool add name=POOL10 ranges=192.168.10.101-192.168.10.249
@@ -73,6 +75,12 @@
 /ip pool add name=POOL100 ranges=192.168.100.101-192.168.100.249
 /ip pool add name=POOL200 ranges=192.168.200.101-192.168.200.249
 /ip pool add name=POOL99 ranges=192.168.99.101-192.168.99.120
+# DHCP Server Network
+/ip dhcp-server network add address=192.168.10.0/24 dns-server=192.168.10.1 domain=.sonoshq.lan gateway=192.168.10.1
+/ip dhcp-server network add address=192.168.11.0/24 dns-server=192.168.11.1 domain=.sonoshqhq.lan gateway=192.168.11.1
+/ip dhcp-server network add address=192.168.100.0/24 dns-server=192.168.100.1 domain=.sonoshqhq.lan gateway=192.168.100.1
+/ip dhcp-server network add address=192.168.200.0/24 dns-server=192.168.200.1 domain=.sonoshqhq.lan gateway=192.168.200.1
+/ip dhcp-server network add address=192.168.99.0/24 dns-server=192.168.99.11 domain=.sonoshqhq.lan gateway=192.168.99.1
 
 # DHCP Server
 /ip dhcp-server add address-pool=POOL10 interface=VLAN10-LAN lease-time=1d name=dhcp-vlan10 lease-script=dhcpleasestatic
@@ -80,12 +88,7 @@
 /ip dhcp-server add address-pool=POOL100 interface=VLAN100-DANTE  lease-time=1d name=dhcp-vlan100 lease-script=dhcpleasestatic
 /ip dhcp-server add address-pool=POOL200 interface=VLAN200-LIGHTING lease-time=1d name=dhcp-vlan200 lease-script=dhcpleasestatic
 /ip dhcp-server add address-pool=POOL99 interface=VLAN99-MGMT lease-time=1d name=dhcp-vlan99 lease-script=dhcpleasestatic
-# DHCP Server Network
-/ip dhcp-server network add address=192.168.10.0/24 dns-server=192.168.10.1 domain=.sonoshq.lan gateway=192.168.10.1
-/ip dhcp-server network add address=192.168.11.0/24 dns-server=192.168.11.1 domain=.sonoshqhq.lan gateway=192.168.11.1
-/ip dhcp-server network add address=192.168.100.0/24 dns-server=192.168.100.1 domain=.sonoshqhq.lan gateway=192.168.100.1
-/ip dhcp-server network add address=192.168.200.0/24 dns-server=192.168.200.1 domain=.sonoshqhq.lan gateway=192.168.200.1
-/ip dhcp-server network add address=192.168.99.0/24 dns-server=192.168.99.11 domain=.sonoshqhq.lan gateway=192.168.99.1
+
 
 /ip dhcp-client add disabled=no interface=ether1-wan add-default-route=yes use-peer-dns=no 
 
@@ -98,13 +101,12 @@
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan11 pvid=11
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan100 pvid=100
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan200 pvid=200
-/interface bridge port add bridge=BRI-TEST frame-types=admin-all [find interface=ether2]
-
-
+/interface bridge port add bridge=BRI-TEST frame-types=admit-all interface=VLAN99-MGMT pvid=99
 /interface bridge vlan add bridge=BRI-TEST vlan-ids=10 tagged=BRI-TEST,ether5 untagged=ether3
 /interface bridge vlan add bridge=BRI-TEST vlan-ids=11 tagged=BRI-TEST,ether5  untagged=ether4
 /interface bridge vlan add bridge=BRI-TEST vlan-ids=100 tagged=BRI-TEST,ether5  
 /interface bridge vlan add bridge=BRI-TEST  vlan-ids=200 tagged=BRI-TEST,ether5 
+
 /interface list member add interface=BRI-TEST list=LAN
 /interface list member add interface=ether1-wan list=WAN
 /interface list member add interface=ether2-oob list=MGMT
@@ -115,7 +117,7 @@
 #/interface list member add interface=VLAN11-WIFI list=LAN
 #/interface list member add interface=VLAN100-DANTE list=LAN
 #/interface list member add interface=VLAN200-LIGHTING list=LAN
-
+/interface detect-internet set detect-interface-list=WAN
 ## IP interfaces
 
 /ip address add address=192.168.99.1/24 interface=VLAN99-MGMT network=192.168.99.0
@@ -130,12 +132,11 @@
 # Filter
 /ip firewall filter
 add action=accept chain=input comment="accept ICMP after RAW" protocol=icmp
+add action=accept chain=input  in-interface=wg-sonoshq  comment="Allow Wireguard"
+add action=accept chain=input in-interface=VLAN99-MGMT  comment="Allow Base_Vlan Full Access"
 add action=accept chain=input comment="to the world" dst-port=53 in-interface=all-vlan protocol=udp
 add action=accept chain=input comment="to the world" dst-port=53 in-interface=all-vlan protocol=tcp
 add action=accept chain=input comment="accept established,related,untracked" connection-state=established,related,untracked
-
-add chain=input action=accept in-interface=wg-sonoshq  comment="Allow Wireguard"
-add chain=input action=accept in-interface=VLAN99-MGMT  comment="Allow Base_Vlan Full Access"
 #add chain=input action=accept in-interface-list=LAN comment="Allow Base_Vlan Full Access"
 
 add action=drop chain=input comment="Drop everything else in input"
@@ -155,7 +156,7 @@ add action=drop chain=forward comment="Drop all" disabled=yes
 add action=masquerade chain=srcnat comment="masquerade" out-interface-list=WAN
 
 
-
+/system logging action add bsd-syslog=yes name=syslog remote=192.168.10.250 syslog-facility=syslog target=remote
 #######################################
 # MAC Server settings
 #######################################
@@ -172,8 +173,6 @@ add action=masquerade chain=srcnat comment="masquerade" out-interface-list=WAN
 /ip service disable telnet,ftp,www,www-ssl,api,ssh,api-ssl
 /ip service set ssh port=22022
 /ip ssh set strong-crypto=yes
-
-/system logging action add bsd-syslog=yes name=syslog remote=192.168.10.250 syslog-facility=syslog target=remote
 /ip cloud set ddns-enabled=no ddns-update-interval=1d update-time=no
 /system ntp client servers add address=time.cloudflare.com
 /system ntp client set enabled=yes
