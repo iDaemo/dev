@@ -100,8 +100,9 @@
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan11 pvid=11
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan100 pvid=100
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged ingress-filtering=yes interface=InterfaceListVlan200 pvid=200
-
 /interface bridge port add bridge=BRI-TEST frame-types=admit-all interface=VLAN99-MGMT pvid=99
+
+/interface bridge vlan add bridge=BRI-TEST vlan-ids=99 tagged=BRI-TEST,ether5 untagged=ether2-oob
 /interface bridge vlan add bridge=BRI-TEST vlan-ids=10 tagged=BRI-TEST,ether5 untagged=ether3
 /interface bridge vlan add bridge=BRI-TEST vlan-ids=11 tagged=BRI-TEST,ether5  untagged=ether4
 /interface bridge vlan add bridge=BRI-TEST vlan-ids=100 tagged=BRI-TEST,ether5  
@@ -113,10 +114,12 @@
 /interface list member add interface=ether3 list=InterfaceListVlan10
 /interface list member add interface=ether4 list=InterfaceListVlan11
 #/interface list member add interface=ether5 list=InterfaceListVlan10
-#/interface list member add interface=VLAN10-LAN list=LAN
-#/interface list member add interface=VLAN11-WIFI list=LAN
-#/interface list member add interface=VLAN100-DANTE list=LAN
-#/interface list member add interface=VLAN200-LIGHTING list=LAN
+/interface list member add interface=VLAN10-LAN list=LAN
+/interface list member add interface=VLAN11-WIFI list=LAN
+/interface list member add interface=VLAN100-DANTE list=LAN
+/interface list member add interface=VLAN200-LIGHTING list=LAN
+/interface list member add interface=VLAN99-MGMT list=LAN
+/interface list member add interface=wg-sonoshq list=LAN
 /interface detect-internet set detect-interface-list=WAN
 ## IP interfaces
 
@@ -147,31 +150,28 @@ add action=drop chain=input comment="Drop everything else in input"
 /ip firewall filter
 add action=fasttrack-connection chain=forward comment="fasttrack" connection-state=established,related 
 add action=accept chain=forward comment="accept established,related, untracked" connection-state=established,related,untracked
-add action=accept chain=forward comment="Allow Wireguard"in-interface=wg-sonoshq
+add action=accept chain=forward comment="Allow Wireguard" in-interface=wg-sonoshq
 add action=accept chain=forward comment="Allow MGMT to connect all VLANs" in-interface=VLAN99-MGMT out-interface=all-vlan
 add action=accept chain=forward disabled=no in-interface-list=InterfaceListVlan10 out-interface-list=InterfaceListVlan11
 add action=accept chain=forward disabled=no in-interface-list=InterfaceListVlan11 out-interface-list=InterfaceListVlan10
 
 add action=drop chain=forward comment="Drop all" disabled=yes
 
-/ip firewall nat
-add action=masquerade chain=srcnat comment="masquerade" out-interface-list=WAN
+/ip firewall nat add action=masquerade chain=srcnat comment="masquerade" out-interface-list=WAN
 
-
-/system logging action add bsd-syslog=yes name=syslog remote=192.168.10.250 syslog-facility=syslog target=remote
 #######################################
 # MAC Server settings
 #######################################
 
 # Ensure only visibility and availability from BASE_VLAN, the MGMT network
 /ip neighbor discovery-settings set discover-interface-list=all
-/tool mac-server mac-winbox set allowed-interface-list=LAN
-#/tool mac-server set allowed-interface-list=LAN
+/tool mac-server mac-winbox set allowed-interface-list=all
+/tool mac-server set allowed-interface-list=all
 
 #######################################
 # System Tidy
 #######################################
-
+/system logging action add bsd-syslog=yes name=syslog remote=192.168.10.250 syslog-facility=syslog target=remote
 /ip service disable telnet,ftp,www,www-ssl,api,api-ssl
 /ip service set ssh port=22022
 /ip ssh set strong-crypto=yes
@@ -181,8 +181,8 @@ add action=masquerade chain=srcnat comment="masquerade" out-interface-list=WAN
 /system clock set time-zone-name=Asia/Bangkok
 /system note set show-at-login=no
 /ip proxy set enabled=no
-/ip upnp set enabled=no
-/ip socks set enabled=no
+?å 
+  /ip socks set enabled=no
 /tool bandwidth-server set enabled=no
 /user add name=sonos group=full password=33338888
 /user remove 0
@@ -190,29 +190,7 @@ add action=masquerade chain=srcnat comment="masquerade" out-interface-list=WAN
 #######################################
 # Manage some scripts
 #######################################
-/system script add dont-require-permissions=no name=dhcp_leadstatic owner=sonos policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local lanDomain;\r\
-    \n:local lanHostname;\r\
-    \n\r\
-    \n:set lanDomain \".lan\";\r\
-    \n\r\
-    \n:local tHostname;\r\
-    \n:local tAddress;\r\
-    \n\r\
-    \n:if (\$leaseBound = 1) do={\r\
-    \n    :set lanHostname (\$\"lease-hostname\" . \$lanDomain);\r\
-    \n\r\
-    \n    /ip dns static;\r\
-    \n    :foreach k,v in=[find] do={\r\
-    \n        :set tHostname [get \$v \"name\"];\r\
-    \n        :set tAddress [get \$v \"address\"];\r\
-    \n        :if (\$tHostname = \$lanHostname) do={\r\
-    \n            remove \$v ;\r\
-    \n            :log info \"Removed old static DNS entry: \$tHostname => \$tAddress\" ;\r\
-    \n        };\r\
-    \n    };\r\
-    \n    /ip dns static add name=\"\$lanHostname\" address=\"\$leaseActIP\" ;\r\
-    \n    :log info \"Added new static DNS entry: \$lanHostname => \$leaseActIP\" ;\r\
-    \n};"
+
 
 #######################################
 # Turn on VLAN mode

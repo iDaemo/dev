@@ -95,8 +95,7 @@ add address=169.254.0.0/16 comment="Rule: RFC6890" list=not_global_ipv4
 add address=172.16.0.0/12 comment="Rule: RFC6890" list=not_global_ipv4
 add address=192.0.0.0/29 comment="Rule: RFC6890" list=not_global_ipv4
 add address=192.168.0.0/16 comment="Rule: RFC6890" list=not_global_ipv4
-add address=198.18.0.0/15 comment="Rule: RFC6890 benchmark" list=\
-    not_global_ipv4
+add address=198.18.0.0/15 comment="Rule: RFC6890 benchmark" list=not_global_ipv4
 add address=255.255.255.255 comment="Rule: RFC6890" list=not_global_ipv4
 add address=224.0.0.0/4 comment="Rule: multicast" list=bad_src_ipv4
 add address=255.255.255.255 comment="Rule: RFC6890" list=bad_src_ipv4
@@ -233,4 +232,18 @@ set enabled=yes
 set broadcast=yes broadcast-addresses=my.LAN.block enabled=yes multicast=\
     yes use-local-clock=yes
 /system ntp client servers
-add address=time.cloudflare.com
+add address=time.cloudflare.com 
+#!test
+#todo
+#asdasdasdasd asdasd
+
+/**
+asdf
+asdasdf
+asdfasdf
+asdfasdfasdf
+
+*/
+
+
+

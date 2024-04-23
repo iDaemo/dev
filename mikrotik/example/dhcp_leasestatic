@@ -23,7 +23,7 @@
 }
 
 # Set how old data you like to delete.  E.g older than 100 week ->"100w".  Older than 30 days -> "30d"
-:local delete "30d"
+:local delete "7d"
 
 # Find and delete entries
 /ip dhcp-server lease
