@@ -63,7 +63,7 @@
 /interface vlan add interface=BRI-TEST name=VLAN99-MGMT vlan-id=99
 /interface list add name=WAN
 /interface list add name=LAN
-/interface list add name=MGMT
+p
 /interface list add name=InterfaceListVlan10
 /interface list add name=InterfaceListVlan11
 /interface list add name=InterfaceListVlan100
@@ -114,7 +114,7 @@
 /interface list member add interface=ether3 list=InterfaceListVlan10
 /interface list member add interface=ether4 list=InterfaceListVlan11
 #/interface list member add interface=ether5 list=InterfaceListVlan10
-/interface list member add interface=VLAN10-LAN list=LAN
+/interface list member add interface=VLAN10-LAN list=LAN`
 /interface list member add interface=VLAN11-WIFI list=LAN
 /interface list member add interface=VLAN100-DANTE list=LAN
 /interface list member add interface=VLAN200-LIGHTING list=LAN
