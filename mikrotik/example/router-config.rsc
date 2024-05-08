@@ -13,7 +13,7 @@
 #######################################
 
 # name the device being configured
-/system identity set name=Raynue
+/system identity set name=Rover
 
 
 #######################################
@@ -135,7 +135,7 @@ add chain=forward action=drop comment="Drop ALL"
 /system ntp client set enabled=yes
 /system clock set time-zone-name=Asia/Bangkok
 /system note set show-at-login=no
-/ip service disable telnet,ftp,www,api,ssh,api-ssl
+/ip service disable telnet,ftp,www,api,api-ssl
 /ip service set ssh port=22022
 /ip ssh set strong-crypto=yes
 /ip proxy set enabled=no
