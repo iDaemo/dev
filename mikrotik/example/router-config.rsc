@@ -83,7 +83,7 @@ public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
 /interface vlan add interface=BRI-TEST name=VLAN38 vlan-id=38
 /interface list add name=InterfaceListVlan38
 /ip address add address=192.168.38.1/24 interface=VLAN38 network=192.168.38.0
-/ip pool add name=POOL38 ranges=192.168.38.150-192.168.38.2220
+/ip pool add name=POOL38 ranges=192.168.38.150-192.168.38.220
 /ip dhcp-server network add address=192.168.38.0/24 dns-server=192.168.38.1 gateway=192.168.38.1 domain=.local
 /ip dhcp-server add address-pool=POOL38 interface=VLAN38 lease-time=1d name=DHCP38 disabled=no
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=38
