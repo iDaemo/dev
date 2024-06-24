@@ -13,7 +13,7 @@
 #######################################
 
 # name the device being configured
-/system identity set name=Rover
+/system identity set name=WaterRESOURES
 
 
 #######################################
@@ -39,7 +39,7 @@
 #######################################
 
 /interface wifi security add name=common-auth authentication-types=wpa2-psk passphrase="33338888" wps=disable
-/interface wifi configuration add name=common-conf ssid=@CONTROLsonosxaura country=Thailand security=common-auth
+/interface wifi configuration add name=common-conf ssid=@CONTROLsonosxWATERRESOURCE country=Thailand security=common-auth
 
 /interface wifi channel add name=ch-2ghz frequency=2412,2437,2462 band=2ghz-n width=20mhz
 /interface wifi channel add name=ch-5ghz frequency=5500,5580,5745 band=5ghz-ac width=20/40mhz-Ce
@@ -79,24 +79,24 @@ public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
 #    public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
 #sonosHQ public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo=" address=10.0.0.1/24
 
-# main VLAN40
-/interface vlan add interface=BRI-TEST name=VLAN40 vlan-id=40
-/interface list add name=InterfaceListVlan40
-/ip address add address=192.168.40.1/24 interface=VLAN40 network=192.168.40.0
-/ip pool add name=POOL40 ranges=192.168.40.10-192.168.40.200
-/ip dhcp-server network add address=192.168.40.0/24 dns-server=192.168.40.1 gateway=192.168.40.1 domain=.lan
-/ip dhcp-server add address-pool=POOL40 interface=VLAN40 lease-time=1d name=DHCP40 disabled=no
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=40
-/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan40 pvid=40
-/interface list member add interface=VLAN40 list=LAN
+# main VLAN38
+/interface vlan add interface=BRI-TEST name=VLAN38 vlan-id=38
+/interface list add name=InterfaceListVlan38
+/ip address add address=192.168.38.1/24 interface=VLAN38 network=192.168.38.0
+/ip pool add name=POOL38 ranges=192.168.38.150-192.168.38.2220
+/ip dhcp-server network add address=192.168.38.0/24 dns-server=192.168.38.1 gateway=192.168.38.1 domain=.local
+/ip dhcp-server add address-pool=POOL38 interface=VLAN38 lease-time=1d name=DHCP38 disabled=no
+/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=38
+/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan38 pvid=38
+/interface list member add interface=VLAN38 list=LAN
 
 # Assign interface member to Vlan
-/interface list member add interface=ether2 list=InterfaceListVlan40
-/interface list member add interface=ether3 list=InterfaceListVlan40
-/interface list member add interface=ether4 list=InterfaceListVlan40
-/interface list member add interface=ether5 list=InterfaceListVlan40
-/interface list member add interface=wifi1 list=InterfaceListVlan40
-/interface list member add interface=wifi2 list=InterfaceListVlan40
+/interface list member add interface=ether2 list=InterfaceListVlan38
+/interface list member add interface=ether3 list=InterfaceListVlan38
+/interface list member add interface=ether4 list=InterfaceListVlan38
+/interface list member add interface=ether5 list=InterfaceListVlan38
+/interface list member add interface=wifi1 list=InterfaceListVlan38
+/interface list member add interface=wifi2 list=InterfaceListVlan38
 
 
 #######################################
