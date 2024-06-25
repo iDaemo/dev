@@ -12,8 +12,8 @@
 
 # Fetching the Record ID from Cloudflare
 # - Run the following after replacing <apiToken> and <dnsRecord>
-    curl -X GET "https://api.cloudflare.com/client/v4/zones/<Your_Zone_ID>/dns_records?type=A&name=<dnsRecord>" \
-     -H "Authorization: Bearer <apiToken>" \
+    curl -X GET "https://api.cloudflare.com/client/v4/zones/99b45096ed0908a2216d066429fc2fb9/dns_records?type=A&name=<dnsRecord>" \
+     -H "Authorization: Bearer 0Wig2bVDagpecrDPqfkRKoxbLedTeE_KAnnKuOxF" \
      -H "Content-Type: application/json"
 # - Look for the id: value in the JSON that is returned.
 
