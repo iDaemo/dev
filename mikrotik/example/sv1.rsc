@@ -95,8 +95,7 @@ public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
 /interface list member add interface=ether3 list=InterfaceListVlan38
 /interface list member add interface=ether4 list=InterfaceListVlan38
 /interface list member add interface=ether5 list=InterfaceListVlan38
-/interface list member add interface=wifi1 list=InterfaceListVlan38
-/interface list member add interface=wifi2 list=InterfaceListVlan38
+/interface list member add interface=ether6 list=InterfaceListVlan38
 
 
 #######################################
