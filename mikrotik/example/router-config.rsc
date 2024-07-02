@@ -13,7 +13,7 @@
 #######################################
 
 # name the device being configured
-/system identity set name=WaterRESOURES
+/system identity set name=SonosControl38
 
 
 #######################################
@@ -39,7 +39,7 @@
 #######################################
 
 /interface wifi security add name=common-auth authentication-types=wpa2-psk passphrase="33338888" wps=disable
-/interface wifi configuration add name=common-conf ssid=@CONTROLsonosxWATERRESOURCE country=Thailand security=common-auth
+/interface wifi configuration add name=common-conf ssid=@CONTROLsonosxaura country=Thailand security=common-auth
 
 /interface wifi channel add name=ch-2ghz frequency=2412,2437,2462 band=2ghz-n width=20mhz
 /interface wifi channel add name=ch-5ghz frequency=5500,5580,5745 band=5ghz-ac width=20/40mhz-Ce
@@ -70,10 +70,10 @@
 
 # Wireguard 
 /interface wireguard add listen-port=13231 mtu=1420 name=wireguard1
-/ip address add address=10.0.0.40/24 interface=wireguard1 network=10.0.0.0
+/ip address add address=10.0.0.38/24 interface=wireguard1 network=10.0.0.0
 
-/interface/wireguard/peers add allowed-address=10.0.0.0/24 endpoint-address=hq.sonoslibra.com endpoint-port=13231 interface=wireguard1 \
-public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
+/interface/wireguard/peers add allowed-address=192.168.10.0/24,10.0.0.0/24 endpoint-address=hq.sonoslibra.com endpoint-port=13231 interface=wireguard1 \
+persistent-keepalive=10s public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
 #/interface wireguard peers add allowed-address=10.0.0.1/32,192.168.10.0/24 disabled=no \
 #    endpoint-address=hq.sonoslibra.com endpoint-port=13231 interface=wireguard1 persistent-keepalive=25s \
 #    public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
@@ -83,7 +83,7 @@ public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
 /interface vlan add interface=BRI-TEST name=VLAN38 vlan-id=38
 /interface list add name=InterfaceListVlan38
 /ip address add address=192.168.38.1/24 interface=VLAN38 network=192.168.38.0
-/ip pool add name=POOL38 ranges=192.168.38.150-192.168.38.220
+/ip pool add name=POOL38 ranges=192.168.38.161-192.168.38.240
 /ip dhcp-server network add address=192.168.38.0/24 dns-server=192.168.38.1 gateway=192.168.38.1 domain=.local
 /ip dhcp-server add address-pool=POOL38 interface=VLAN38 lease-time=1d name=DHCP38 disabled=no
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=38
@@ -128,14 +128,14 @@ add chain=forward action=drop comment="Drop ALL"
 # SYSTEM SETUP
 #######################################
 
-/ipv6 settings set disable-ipv6=yes
-/ipv6 nd set [ find default=yes ] disabled=yes
+#/ipv6 settings set disable-ipv6=yes
+#/ipv6 nd set [ find default=yes ] disabled=yes
 /ip cloud set ddns-enabled=no ddns-update-interval=1d update-time=no
 /system ntp client servers add address=time.cloudflare.com
 /system ntp client set enabled=yes
 /system clock set time-zone-name=Asia/Bangkok
 /system note set show-at-login=no
-/ip service disable telnet,ftp,www,api,api-ssl
+/ip service disable telnet,ftp,api,api-ssl
 /ip service set ssh port=22022
 /ip ssh set strong-crypto=yes
 /ip proxy set enabled=no
