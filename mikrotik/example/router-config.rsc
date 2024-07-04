@@ -63,6 +63,7 @@
 # list and service
 /interface list add name=LAN
 /interface list add name=WAN
+/interface list add name=MGMT
 /interface detect-internet set detect-interface-list=WAN
 /ip dhcp-client add interface=ether1 disabled=no 
 /interface list member add interface=ether1 list=WAN 
