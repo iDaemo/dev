@@ -105,8 +105,6 @@ persistent-keepalive=10s public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo
 /interface list member add interface=VLAN39 list=LAN
 
 
-
-
 # Assign interface member to Vlan
 /interface list member add interface=ether2 list=InterfaceListVlan38
 /interface list member add interface=ether3 list=InterfaceListVlan38
