@@ -20,7 +20,9 @@
 # VLAN Overview
 #######################################
 
-# 40 = AV (ControlNetwork))
+# 38 = AV (ControlNetwork+DanteNetwork))
+# 39 = AV (DanteNetwork1))
+# 40 = AV (DanteNetwork2))
 # 99 = BASE (MGMT) VLAN
 
 
@@ -91,11 +93,25 @@ persistent-keepalive=10s public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan38 pvid=38
 /interface list member add interface=VLAN38 list=LAN
 
+# VLAN39
+/interface vlan add interface=BRI-TEST name=VLAN39 vlan-id=39
+/interface list add name=InterfaceListVlan39
+/ip address add address=192.168.39.1/24 interface=VLAN39 network=192.168.39.0
+/ip pool add name=POOL39 ranges=192.168.39.161-192.168.39.240
+/ip dhcp-server network add address=192.168.39.0/24 dns-server=192.168.39.1 gateway=192.168.39.1 domain=.local
+/ip dhcp-server add address-pool=POOL39 interface=VLAN39 lease-time=1d name=DHCP39 disabled=no
+/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=39
+/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan39 pvid=39
+/interface list member add interface=VLAN39 list=LAN
+
+
+
+
 # Assign interface member to Vlan
 /interface list member add interface=ether2 list=InterfaceListVlan38
 /interface list member add interface=ether3 list=InterfaceListVlan38
 /interface list member add interface=ether4 list=InterfaceListVlan38
-/interface list member add interface=ether5 list=InterfaceListVlan38
+#/interface list member add interface=ether5 list=InterfaceListVlan38
 /interface list member add interface=wifi1 list=InterfaceListVlan38
 /interface list member add interface=wifi2 list=InterfaceListVlan38
 
