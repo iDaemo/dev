@@ -87,7 +87,7 @@
 
 # Speacial for LTE
 /interface lte set [ find default-name=lte1 ] sms-read=no
-/ip dhcp-client add interface=lte1 disabled=no
+#/ip dhcp-client add interface=lte1 disabled=no
 /interface list member add interface=lte1 list=WAN
 
 # Wireguard 
@@ -166,7 +166,7 @@ add chain=forward action=drop comment="Drop ALL"
 /ip upnp set enabled=no
 /ip socks set enabled=no
 /tool bandwidth-server set enabled=no
-/user add name=sonos group=full password=33338888
+/user add name=gle group=full password=thaigaming
 /user remove 0
 
 #######################################
