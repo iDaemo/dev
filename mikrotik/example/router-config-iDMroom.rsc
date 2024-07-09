@@ -49,8 +49,8 @@
 /interface wifi set wifi2 channel=ch-5ghz configuration=common-conf disabled=no
 
 # For FUTURE IMPLEMENT
-/interface wireless access-list add allow-signal-out-of-range=30s comment="5G Wifi" interface=wifi2 signal-range=-80..120 vlan-mode=no-tag
-/interface wireless access-list add allow-signal-out-of-range=30s comment="2.4G Wifi" interface=wifi1 signal-range=-120..-70 vlan-mode=no-tag
+#/interface wireless access-list add allow-signal-out-of-range=30s comment="5G Wifi" interface=wifi2 signal-range=-80..120 vlan-mode=no-tag
+#/interface wireless access-list add allow-signal-out-of-range=30s comment="2.4G Wifi" interface=wifi1 signal-range=-120..-70 vlan-mode=no-tag
 
 # create logging for wifi system
 /system logging add topics=wireless,debug action=memory
@@ -76,22 +76,23 @@
 #######################################
 # Interface Setup
 #######################################
-
-# Speacial for LTE
-/interface lte set [ find default-name=lte1 ] sms-read=no
-
 # list and service
 /interface list add name=LAN
 /interface list add name=WAN
 /interface list add name=MGMT
 /interface detect-internet set detect-interface-list=WAN
-/ip dhcp-client add interface=ether1 disabled=no 
+/ip dhcp-client add interface=ether1 disabled=no
 /interface list member add interface=ether1 list=WAN 
 /ip dns set allow-remote-requests=yes
 
+# Speacial for LTE
+/interface lte set [ find default-name=lte1 ] sms-read=no
+/ip dhcp-client add interface=lte1 disabled=no
+/interface list member add interface=lte1 list=WAN
+
 # Wireguard 
 /interface wireguard add listen-port=13231 mtu=1420 name=wireguard1
-/ip address add address=10.0.0.38/24 interface=wireguard1 network=10.0.0.0
+/ip address add address=10.0.0.100/24 interface=wireguard1 network=10.0.0.0
 
 /interface/wireguard/peers add allowed-address=192.168.10.0/24,10.0.0.0/24 endpoint-address=hq.sonoslibra.com endpoint-port=13231 interface=wireguard1 \
 persistent-keepalive=10s public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
@@ -101,35 +102,23 @@ persistent-keepalive=10s public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo
 #sonosHQ public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo=" address=10.0.0.1/24
 
 # main VLAN38
-/interface vlan add interface=BRI-TEST name=VLAN38 vlan-id=38
-/interface list add name=InterfaceListVlan38
-/ip address add address=192.168.38.1/24 interface=VLAN38 network=192.168.38.0
-/ip pool add name=POOL38 ranges=192.168.38.161-192.168.38.240
-/ip dhcp-server network add address=192.168.38.0/24 dns-server=192.168.38.1 gateway=192.168.38.1 domain=.local
-/ip dhcp-server add address-pool=POOL38 interface=VLAN38 lease-time=1d name=DHCP38 disabled=no
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=38
-/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan38 pvid=38
-/interface list member add interface=VLAN38 list=LAN
-
-# VLAN39
-/interface vlan add interface=BRI-TEST name=VLAN39 vlan-id=39
-/interface list add name=InterfaceListVlan39
-/ip address add address=192.168.39.1/24 interface=VLAN39 network=192.168.39.0
-/ip pool add name=POOL39 ranges=192.168.39.161-192.168.39.240
-/ip dhcp-server network add address=192.168.39.0/24 dns-server=192.168.39.1 gateway=192.168.39.1 domain=.local
-/ip dhcp-server add address-pool=POOL39 interface=VLAN39 lease-time=1d name=DHCP39 disabled=no
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=39
-/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan39 pvid=39
-/interface list member add interface=VLAN39 list=LAN
-
+/interface vlan add interface=BRI-TEST name=VLAN100 vlan-id=100
+/interface list add name=InterfaceListVlan100
+/ip address add address=192.168.100.1/24 interface=VLAN100 network=192.168.100.0
+/ip pool add name=POOL100 ranges=192.168.100.61-192.168.100.240
+/ip dhcp-server network add address=192.168.100.0/24 dns-server=192.168.100.1 gateway=192.168.100.1 domain=.local
+/ip dhcp-server add address-pool=POOL100 interface=VLAN100 lease-time=1d name=DHCP100 disabled=no
+/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=100
+/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan100 pvid=100
+/interface list member add interface=VLAN100 list=LAN
 
 # Assign interface member to Vlan
-/interface list member add interface=ether2 list=InterfaceListVlan38
-/interface list member add interface=ether3 list=InterfaceListVlan38
-/interface list member add interface=ether4 list=InterfaceListVlan38
-#/interface list member add interface=ether5 list=InterfaceListVlan38
-/interface list member add interface=wifi1 list=InterfaceListVlan38
-/interface list member add interface=wifi2 list=InterfaceListVlan38
+/interface list member add interface=ether2 list=InterfaceListVlan100
+/interface list member add interface=ether3 list=InterfaceListVlan100
+/interface list member add interface=ether4 list=InterfaceListVlan100
+/interface list member add interface=ether5 list=InterfaceListVlan100
+/interface list member add interface=wifi1 list=InterfaceListVlan100
+/interface list member add interface=wifi2 list=InterfaceListVlan100
 
 
 #######################################
@@ -145,14 +134,16 @@ add action=accept chain=input comment="DNS TCP" dst-port=53 in-interface=all-vla
 add action=accept chain=input comment="ICMP" in-interface=all-vlan protocol=icmp
 add action=accept chain=input comment="WireGuard" dst-port=13231 protocol=udp
 add action=accept chain=input comment="Winbox" dst-port=8291 protocol=tcp 
-add chain=input action=accept comment="Allow VLAN" in-interface-list=LAN 
+add chain=input action=accept comment="Allow VLAN" in-interface-list=LAN
 add action=drop chain=input comment="Drop else INPUT"
 
 add action=fasttrack-connection chain=forward comment="Fast Track" connection-state=established,related hw-offload=yes
 add action=accept chain=forward comment="Allow Established & Related" connection-state=established,related,untracked
 add action=drop chain=forward comment="Drop invalid in forward chain" connection-state=invalid
-add action=accept chain=forward comment="Allow internet" in-interface-list=LAN out-interface-list=WAN
 add action=accept chain=forward comment="WG to LAN" in-interface=wireguard1 out-interface-list=LAN
+add action=accept chain=forward comment="LAN to WG" in-interface-list=LAN out-interface=wireguard1
+add action=accept chain=forward comment="Allow internet" in-interface-list=LAN out-interface-list=WAN
+
 add chain=forward action=drop comment="Drop ALL"
 
 /ip firewall nat add action=masquerade chain=srcnat out-interface-list=WAN
