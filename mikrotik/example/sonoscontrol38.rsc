@@ -4,7 +4,7 @@
 # model = RBD52G-5HacD2HnD
 # serial number = F66A0FE03F67
 /interface bridge add igmp-snooping=yes name=BRI-TEST protocol-mode=none vlan-filtering=yes
-/interface lte set [ find default-name=lte1 ] sms-read=no
+#/interface lte set [ find default-name=lte1 ] sms-read=no
 /interface wireguard add listen-port=13231 mtu=1420 name=wireguard1 private-key="cIszD9jXcGG2R1cerOTwdidw89B4R2vFM82q/KGa62k="
 /interface vlan add interface=BRI-TEST name=VLAN38 vlan-id=38
 /interface vlan add interface=BRI-TEST name=VLAN39 vlan-id=39
@@ -37,7 +37,7 @@
 /interface list member add interface=ether4 list=InterfaceListVlan38
 /interface list member add interface=wifi1 list=InterfaceListVlan38
 /interface list member add interface=wifi2 list=InterfaceListVlan38
-/interface list member add interface=lte1 list=WAN
+#/interface list member add interface=lte1 list=WAN
 /interface wireguard peers add allowed-address=192.168.10.0/24,10.0.0.0/24 disabled=yes endpoint-address=hq.sonoslibra.com endpoint-port=13231 interface=wireguard1 name=peer1 persistent-keepalive=10s public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
 /ip address add address=10.0.0.38/24 interface=wireguard1 network=10.0.0.0
 /ip address add address=192.168.38.1/24 interface=VLAN38 network=192.168.38.0
