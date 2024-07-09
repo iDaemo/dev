@@ -5,7 +5,7 @@
 # serial number = F66A0FE03F67
 /interface bridge add igmp-snooping=yes name=BRI-TEST protocol-mode=none vlan-filtering=yes
 /interface lte set [ find default-name=lte1 ] sms-read=no
-/interface wireguard add listen-port=13231 mtu=1420 name=wireguard1 private-key="qNZ6YHCQEIm30htEUC4uSdLe0MooLwTcL96EUGBu3Gk="
+/interface wireguard add listen-port=13231 mtu=1420 name=wireguard1 private-key="cIszD9jXcGG2R1cerOTwdidw89B4R2vFM82q/KGa62k="
 /interface vlan add interface=BRI-TEST name=VLAN38 vlan-id=38
 /interface vlan add interface=BRI-TEST name=VLAN39 vlan-id=39
 /interface list add name=LAN
