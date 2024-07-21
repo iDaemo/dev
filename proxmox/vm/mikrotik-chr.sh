@@ -251,12 +251,7 @@ nfs | dir)
   DISK_REF="$VMID/"
   DISK_IMPORT="-format qcow2"
   ;;
-btrfs)
-  DISK_EXT=""
-  DISK_REF="$VMID/"
-  DISK_IMPORT="-format raw"
-  ;;
-zfspool)
+btrfs | zfspool)
   DISK_EXT=""
   DISK_REF=""
   DISK_IMPORT="-format raw"
@@ -288,3 +283,5 @@ if [ "$START_VM" == "yes" ]; then
   msg_ok "Started Mikrotik RouterOS CHR VM"
 fi
 msg_ok "Completed Successfully!\n"
+
+dd if=chr-6.42.12.img of=/dev/zvol/local-zfs/vm-351-disk-0
