@@ -1,5 +1,5 @@
 ### Automate scripts for proxmox
-- [go](https://tteck.github.io/Proxmox){:target="_blank" rel="noopener"}
+- https://tteck.github.io/Proxmox
 
 
 ### VMs Best Practice
