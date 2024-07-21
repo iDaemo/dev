@@ -251,9 +251,14 @@ nfs | dir)
   DISK_REF="$VMID/"
   DISK_IMPORT="-format qcow2"
   ;;
-btrfs | zfspool)
+btrfs)
   DISK_EXT=""
-  DISK_REF=""
+  DISK_REF="$VMID/"
+  DISK_IMPORT="-format raw"
+  ;;
+zfspool)
+  DISK_EXT=""
+  DISK_REF="$VMID/"
   DISK_IMPORT="-format raw"
   ;;
 esac
@@ -284,4 +289,4 @@ if [ "$START_VM" == "yes" ]; then
 fi
 msg_ok "Completed Successfully!\n"
 
-dd if=chr-6.42.12.img of=/dev/zvol/local-zfs/vm-351-disk-0
+dd if=chr-6.42.12.img of=/dev/zvol/rpool/data/vm-351-disk-0
