@@ -1,0 +1,23 @@
+netbios dns to mikrotik
+
+```
+:local lease [/ip dhcp-server lease print active as-value where mac-address=$leaseActMAC];
+:local hostname $"lease-hostname";
+:local expires ($lease->0->"expires-after");
+:local tld "";
+:local dnsStatic [/ip dns static print as-value where name="$hostname$tld"];
+
+:if ($dnsStatic = "") do={
+ log info "Add static DNS $leaseActIP > $hostname$tld"
+ /ip dns static add name="$hostname$tld" address=$leaseActIP type="A" ttl=$expires
+} else={
+ :local lease2 [/ip dhcp-server lease print active as-value where host-name=$hostname];
+ if ($lease2 != "") do={
+  log info "Update static DNS $leaseActIP > $hostname$tld"
+  /ip dns static set [find name="$hostname$tld"] address=$leaseActIP ttl=$expires
+ } else={
+  log info "Delete static DNS $leaseActIP > $hostname$tld"
+  /ip dns static remove [find name="$hostname$tld"]
+ }
+}
+```

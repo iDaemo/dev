@@ -1,0 +1,273 @@
+###############################################################################
+# Topic:		Using RouterOS to VLAN your network
+# Example:		Switch with a separate router (RoaS)
+# Web:			https://forum.mikrotik.com/viewtopic.php?t=143620
+# RouterOS:		6.43.12
+# Date:			Mar 28, 2019
+# Notes:		Start with a reset (/system reset-configuration no-defaults=yes skip-backup=yes run-after-reset=flash/router.rsc)
+# Thanks:		mkx, sindy
+###############################################################################
+
+:delay 30s
+
+#######################################
+# Housekeeping
+#######################################
+
+# name the device being configured
+/system identity set name="MainRouterSwitch"
+
+/system clock set time-zone-name=Asia/Jerusalem
+
+
+#######################################
+# VLAN Overview
+#######################################
+
+# 60 = GUEST (GREEN)
+# 70 = RED
+# 80 = BLUE
+# 99 = BASE (MGMT) VLAN1
+
+
+#######################################
+# Bridge
+#######################################
+
+# create one bridge, set VLAN mode off while we configure
+/interface bridge add name=BR1 protocol-mode=none vlan-filtering=no
+
+#######################################
+#
+# WIFI Setup
+#
+#######################################
+
+# BASE SSID, admin level access to Winbox the device. Use a local ethernet port if preferred.
+/interface wireless security-profiles set [ find default=yes ] authentication-types=wpa2-psk mode=dynamic-keys wpa2-pre-shared-key=""
+/interface wireless set [ find default-name=wlan1 ] ssid=Home frequency=auto mode=ap-bridge disabled=no distance=indoors band=2ghz-b/g/n channel-width=20/40mhz-XX wireless-protocol=802.11
+/interface wireless set [ find default-name=wlan2 ] ssid=Home frequency=auto mode=ap-bridge disabled=no distance=indoors band=5ghz-a/n/ac channel-width=20/40/80mhz-XXXX wireless-protocol=802.11
+
+# GUEST SSID
+/interface wireless security-profiles add name=HomeGuest authentication-types=wpa2-psk mode=dynamic-keys wpa2-pre-shared-key=""
+/interface wireless add name=wlan3 ssid=HomeGuest master-interface=wlan1 security-profile=HomeGuest disabled=no
+/interface wireless add name=wlan4 ssid=HomeGuest master-interface=wlan2 security-profile=HomeGuest disabled=no
+
+# RED SSID
+/interface wireless security-profiles add name=HomeUntrusted authentication-types=wpa2-psk mode=dynamic-keys wpa2-pre-shared-key=""
+/interface wireless add name=wlan5 ssid=HomeUntrusted master-interface=wlan1 security-profile=HomeUntrusted disabled=no
+/interface wireless add name=wlan6 ssid=HomeUntrusted master-interface=wlan2 security-profile=HomeUntrusted disabled=no
+
+# BLUE SSID
+/interface wireless security-profiles add name=HomeSafe authentication-types=wpa2-psk mode=dynamic-keys wpa2-pre-shared-key=""
+/interface wireless add name=wlan7 ssid=HomeSafe hide-ssid=yes master-interface=wlan1 security-profile=HomeSafe disabled=no
+/interface wireless add name=wlan8 ssid=HomeSafe hide-ssid=yes master-interface=wlan2 security-profile=HomeSafe disabled=no
+
+#######################################
+#
+# -- Access Ports --
+#
+#######################################
+
+# ingress behavior
+/interface bridge port
+
+# BASE VLAN
+add bridge=BR1 interface=wlan1 pvid=99
+add bridge=BR1 interface=wlan2 pvid=99
+
+# GUEST
+add bridge=BR1 interface=wlan3 pvid=60
+add bridge=BR1 interface=wlan4 pvid=60
+
+# RED
+add bridge=BR1 interface=wlan5 pvid=70
+add bridge=BR1 interface=wlan6 pvid=70
+
+# BLUE
+add bridge=BR1 interface=wlan7 pvid=80
+add bridge=BR1 interface=wlan8 pvid=80
+
+# egress behavior, handled automatically
+
+#######################################
+#
+# -- Trunk Ports --
+#
+#######################################
+
+# ingress behavior
+/interface bridge port
+
+# Purple Trunk. Leave pvid set to default of 1
+add bridge=BR1 interface=ether2
+add bridge=BR1 interface=ether3
+add bridge=BR1 interface=ether4
+add bridge=BR1 interface=ether5
+
+# egress behavior
+/interface bridge vlan
+
+# Purple Trunk. These need IP Services (L3), so add Bridge as member
+add bridge=BR1 tagged=BR1,ether2,ether3,ether4,ether5 vlan-ids=60
+add bridge=BR1 tagged=BR1,ether2,ether3,ether4,ether5 vlan-ids=70
+add bridge=BR1 tagged=BR1,ether2,ether3,ether4,ether5 vlan-ids=80
+add bridge=BR1 tagged=BR1,ether2,ether3,ether4,ether5 vlan-ids=99
+
+
+#######################################
+# IP Addressing & Routing
+#######################################
+
+# LAN facing router's IP address on the BASE_VLAN
+/interface vlan add interface=BR1 name=BASE_VLAN vlan-id=99
+/ip address add address=192.168.0.1/24 interface=BASE_VLAN
+
+# DNS server, set to cache for LAN
+/ip dns set allow-remote-requests=yes servers="1.1.1.1,1.0.0.1"
+
+# PPoE used instead of the config below
+/interface pppoe-client
+add add-default-route=yes disabled=no interface=ether1 name=pppoe-out1 \
+    password=... use-peer-dns=no user=...
+
+# WAN facing port with IP Address provided by ISP
+# /ip address add interface=ether1 address=a.a.a.a/aa network=a.a.a.0
+
+# router's gateway provided by ISP
+# /ip route add distance=1 gateway=b.b.b.b
+
+
+#######################################
+# IP Services
+#######################################
+
+# GUEST VLAN interface creation, IP assignment, and DHCP service
+/interface vlan add interface=BR1 name=GUEST_VLAN vlan-id=60
+/ip address add interface=GUEST_VLAN address=10.0.60.1/24
+/ip pool add name=GUEST_POOL ranges=10.0.60.2-10.0.60.254
+/ip dhcp-server add address-pool=GUEST_POOL interface=GUEST_VLAN name=GUEST_DHCP disabled=no
+/ip dhcp-server network add address=10.0.60.0/24 dns-server=192.168.0.1 gateway=10.0.60.1
+
+# RED VLAN interface creation, IP assignment, and DHCP service
+/interface vlan add interface=BR1 name=RED_VLAN vlan-id=70
+/ip address add interface=RED_VLAN address=10.0.70.1/24
+/ip pool add name=RED_POOL ranges=10.0.70.2-10.0.70.254
+/ip dhcp-server add address-pool=RED_POOL interface=RED_VLAN name=RED_DHCP disabled=no
+/ip dhcp-server network add address=10.0.70.0/24 dns-server=192.168.0.1 gateway=10.0.70.1
+
+# BLUE VLAN interface creation, IP assignment, and DHCP service
+/interface vlan add interface=BR1 name=BLUE_VLAN vlan-id=80
+/ip address add interface=BLUE_VLAN address=10.0.80.1/24
+/ip pool add name=BLUE_POOL ranges=10.0.80.2-10.0.80.254
+/ip dhcp-server add address-pool=BLUE_POOL interface=BLUE_VLAN name=BLUE_DHCP disabled=no
+/ip dhcp-server network add address=10.0.80.0/24 dns-server=192.168.0.1 gateway=10.0.80.1
+/ip dhcp-server lease add address=10.0.80.2 mac-address=... server=BLUE_DHCP
+
+# Optional: Create a DHCP instance for BASE_VLAN. Convenience feature for an admin.
+/ip pool add name=BASE_POOL ranges=192.168.0.10-192.168.0.254
+/ip dhcp-server add address-pool=BASE_POOL interface=BASE_VLAN name=BASE_DHCP disabled=no
+/ip dhcp-server network add address=192.168.0.0/24 dns-server=192.168.0.1 gateway=192.168.0.1
+
+
+#######################################
+# Firewalling & NAT
+# A good firewall for WAN. Up to you
+# about how you want LAN to behave.
+#######################################
+
+# Use MikroTik's "list" feature for easy rule matchmaking.
+
+/interface list add name=WAN
+/interface list add name=RED
+/interface list add name=BLUE
+/interface list add name=BASE
+
+/interface list member
+# WAN/internet (was ether1, but ISP uses pppoe)
+add interface=pppoe-out1    list=WAN
+
+# Access internet, RED from each other
+add interface=BASE_VLAN     list=RED
+add interface=GUEST_VLAN    list=RED
+add interface=RED_VLAN  list=RED
+
+# BLUE is REDd and has no internet access
+add interface=BLUE_VLAN     list=BLUE
+
+# Base can access everything
+add interface=BASE_VLAN     list=BASE
+
+# VLAN aware firewall. Order is important.
+/ip firewall filter
+
+
+##################
+# INPUT CHAIN
+##################
+add chain=input action=accept connection-state=established,related comment="Allow Estab & Related"
+
+# Allow VLANs to access router services like DNS, Winbox.
+add chain=input action=accept in-interface-list=RED comment="Allow VLAN"
+
+# Allow BASE_VLAN full access to the device for Winbox, etc.
+add chain=input action=accept in-interface=BASE_VLAN comment="Allow Base_Vlan Full Access"
+
+# Allow server to access router services like DNS, Winbox.
+add chain=input action=accept src-address=10.0.80.2 src-mac-address=... comment="Allow Server"
+
+# Allow router services for BLUE
+add chain=input action=accept in-interface-list=BLUE comment="Allow VLAN"
+
+add chain=input action=drop comment="Drop"
+
+
+##################
+# FORWARD CHAIN
+##################
+add chain=forward action=accept connection-state=established,related comment="Allow Estab & Related"
+
+# Allow RED VLANs to access the Internet only, NOT each other
+add chain=forward action=accept connection-state=new in-interface-list=RED out-interface-list=WAN comment="VLAN Internet Access only"
+
+# Allow BASE VLAN to access everything
+add chain=forward action=accept connection-state=new in-interface=BASE_VLAN comment="BASE VLAN all access"
+
+# Allow server to access the Internet only, NOT other VLANs
+add chain=forward action=accept connection-state=new src-address=10.0.80.2 src-mac-address=... out-interface-list=WAN comment="Allow Server"
+
+add chain=forward action=drop comment="Drop"
+
+
+##################
+# NAT
+##################
+/ip firewall nat add chain=srcnat action=masquerade out-interface-list=WAN comment="Default masquerade"
+
+
+#######################################
+# VLAN Security
+#######################################
+
+# Only allow packets with tags over the Trunk Ports
+/interface bridge port
+set bridge=BR1 ingress-filtering=yes frame-types=admit-only-vlan-tagged [find interface=ether2]
+set bridge=BR1 ingress-filtering=yes frame-types=admit-only-vlan-tagged [find interface=ether3]
+set bridge=BR1 ingress-filtering=yes frame-types=admit-only-vlan-tagged [find interface=ether4]
+set bridge=BR1 ingress-filtering=yes frame-types=admit-only-vlan-tagged [find interface=ether5]
+
+
+#######################################
+# MAC Server settings
+#######################################
+
+# Ensure only visibility and availability from BASE_VLAN, the MGMT network
+/ip neighbor discovery-settings set discover-interface-list=BASE
+/tool mac-server mac-winbox set allowed-interface-list=BASE
+/tool mac-server set allowed-interface-list=BASE
+
+
+#######################################
+# Turn on VLAN mode
+#######################################
+/interface bridge set BR1 vlan-filtering=yes

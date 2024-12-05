@@ -1,0 +1,22 @@
+:local domainname "mydomain.local"
+:local dnsrecord [/ip dns static find where address=$leaseActIP ]
+:if ( $leaseBound = 0 ) do={
+  :if ( [ :len $dnsrecord ] > 0 ) do={
+    :log warning ("DNS release record for $[/ip dns static get $dnsrecord name] ( $leaseActIP )")
+    /ip dns static remove $dnsrecord
+  }
+} else={
+  :local hostname [/ip dhcp-server lease get [/ip dhcp-server lease find where address=$leaseActIP server=$leaseServerName ] host-name]	
+  :local fqdn
+  :local dhcplease
+  :foreach dhcplease in=[/ip dhcp-server lease find where ( server="$leaseServerName" && address=$leaseActIP ) ] do={
+    :set hostname [/ip dhcp-server lease get $dhcplease host-name ]
+    :set fqdn ( $hostname . "." . $domainname )
+    :local ttl [/ip dhcp-server lease get $dhcplease expires-after ]
+    :if ( [ :len $dnsrecord ] > 0 ) do={
+      /ip dns static remove $dnsrecord
+    }
+    :log warning ("Renew DNS record for $fqdn ( $leaseActIP )")
+    /ip dns static add name=$fqdn address=$leaseActIP ttl=$ttl comment=$leaseActMAC
+  }
+}
