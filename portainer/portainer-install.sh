@@ -24,3 +24,15 @@ sudo usermod -aG docker jay
 
 sudo docker volume create portainer_data
 sudo docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
+
+## configure files on /etc/apt/apt.conf.d/50unattended-upgrades
+#"${distro_id}:${distro_codename}-updates";
+#Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+#Unattended-Upgrade::Mail "gle@sonoslibra.com";
+#Unattended-Upgrade::MailReport "only-on-error";
+#Unattended-Upgrade::Remove-Unused-Dependencies "true";
+#Unattended-Upgrade::Automatic-Reboot "true";
+#Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+
+
+
