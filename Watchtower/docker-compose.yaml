@@ -34,4 +34,4 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     #  - /root/.docker/config.json:/config.json - Enable this when using a custom repo
-    command: --interval 86400 # change this interval to whatever suits you
+    command: --schedule "0 0 4 * * *" # change this interval to whatever suits you
