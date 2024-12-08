@@ -1,5 +1,9 @@
 /interface bridge add name=BRI-TEST protocol-mode=none vlan-filtering=yes
-/interface wireguard add listen-port=13231 mtu=1420 name=wireguard1 
+/interface wireguard add listen-port=13231 mtu=1420 name=wireguard1 \
+    public-key="xrCcvH4UFGyPed2FT/aRdaozmi3MNMPfG51dmVt7eUE="
+/interface wireguard peers add allowed-address=10.0.0.1/32,192.168.10.0/24 endpoint-address=hq.sonoslibra.com endpoint-port=13231 \
+    interface=wireguard1 name=sonoshq public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
+
 /interface vlan add interface=BRI-TEST name=VLAN100 vlan-id=100
 /interface vlan add interface=BRI-TEST name=VLAN111 vlan-id=111
 /interface list add name=MANAGE
@@ -12,8 +16,8 @@
 /interface wifi channel add band=5ghz-ac frequency=5500,5580,5745 name=ch-5ghz width=20/40mhz-Ce
 /interface wifi security add authentication-types=wpa2-psk name=common-auth passphrase=thaigaming wps=disable
 /interface wifi configuration add country=Thailand name=common-conf security=common-auth ssid=iDaemon
-/interface wifi set [ find default-name=wifi1 ] channel=ch-2ghz configuration=common-conf disabled=no
-/interface wifi set [ find default-name=wifi2 ] channel=ch-5ghz configuration=common-conf disabled=no
+/interface wifi set [ find default-name=wifi1 ] channel=ch-5ghz configuration=common-conf disabled=no
+/interface wifi set [ find default-name=wifi2 ] channel=ch-2ghz configuration=common-conf disabled=no
 
 
 /ip pool add name=POOL100 ranges=192.168.100.10-192.168.100.200
