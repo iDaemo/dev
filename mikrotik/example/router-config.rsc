@@ -42,14 +42,14 @@
 # 5G - 36-5180 52-5260 100-5500 116-5580 149-5745
 #######################################
 
-/interface wifi security add name=common-auth authentication-types=wpa2-psk passphrase="33338888" wps=disable
-/interface wifi configuration add name=common-conf ssid=@CONTROLsonosxaura country=Thailand security=common-auth
+#/interface wifi security add name=common-auth authentication-types=wpa2-psk passphrase="33338888" wps=disable
+#/interface wifi configuration add name=common-conf ssid=@CONTROLsonosxaura country=Thailand security=common-auth
 
-/interface wifi channel add name=ch-2ghz frequency=2412,2437,2462 band=2ghz-n width=20mhz
-/interface wifi channel add name=ch-5ghz frequency=5500,5580,5745 band=5ghz-ac width=20/40mhz-Ce
+#/interface wifi channel add name=ch-2ghz frequency=2412,2437,2462 band=2ghz-n width=20mhz
+#/interface wifi channel add name=ch-5ghz frequency=5500,5580,5745 band=5ghz-ac width=20/40mhz-Ce
 
-/interface wifi set wifi1 channel=ch-2ghz configuration=common-conf disabled=no 
-/interface wifi set wifi2 channel=ch-5ghz configuration=common-conf disabled=no
+#/interface wifi set wifi1 channel=ch-2ghz configuration=common-conf disabled=no 
+#/interface wifi set wifi2 channel=ch-5ghz configuration=common-conf disabled=no
 
 # For FUTURE IMPLEMENT
 #/interface wireless access-list
@@ -76,8 +76,8 @@
 /interface wireguard add listen-port=13231 mtu=1420 name=wireguard1
 /ip address add address=10.0.0.40/24 interface=wireguard1 network=10.0.0.0
 
-/interface/wireguard/peers add allowed-address=10.0.0.0/24 endpoint-address=hq.sonoslibra.com endpoint-port=13231 interface=wireguard1 persistent-keepalive=10s \
-public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
+#/interface/wireguard/peers add allowed-address=10.0.0.0/24 endpoint-address=hq.sonoslibra.com endpoint-port=13231 interface=wireguard1 persistent-keepalive=10s \
+#public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
 #/interface wireguard peers add allowed-address=10.0.0.1/32,192.168.10.0/24 disabled=no \
 #    endpoint-address=hq.sonoslibra.com endpoint-port=13231 interface=wireguard1 persistent-keepalive=25s \
 #    public-key="hzWlAOAdla+xUtbMeJxZ7FkESNkCy4uojBdEWRnIvQo="
