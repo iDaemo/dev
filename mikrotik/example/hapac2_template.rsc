@@ -1,6 +1,6 @@
 
 #######################################
-# HAP ac2 Config file
+# HAP ac2 Config file MUST INSTALL EXTRA PACKAGE wifi-qcom-ac.apk
 # Notes:		Start with a reset (/system reset-configuration no-defaults=yes skip-backup=yes run-after-reset=flash/router-config.rsc)
 #######################################
 
@@ -11,7 +11,7 @@
 #######################################
 
 # name the device being configured
-/system identity set name=Raynue
+/system identity set name=COCOTAM
 
 
 #######################################
