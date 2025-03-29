@@ -114,7 +114,7 @@ add action=drop chain=forward comment="Drop All Other Forwarded Traffic"
 /system note set show-at-login=no
 /system ntp client set enabled=yes
 /system ntp client servers add address=time.cloudflare.com
-/ip service disable telnet,ftp,www,api
+/ip service disable telnet,ftp,api
 /ip service set ssh port=22022
 /ip ssh set strong-crypto=yes
 /ip proxy set enabled=no
