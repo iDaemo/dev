@@ -96,17 +96,18 @@ add action=accept chain=input comment="Allow ICMP (limited)" protocol=icmp limit
 add action=accept chain=input comment="Allow WireGuard handshake" dst-port=13231 protocol=udp
 add action=accept chain=input comment="Allow traffic from WireGuard interface" in-interface=wireguard1
 add action=accept chain=input comment="Allow DNS (UDP from LAN)" in-interface-list=LAN dst-port=53 protocol=udp
-add action=accept chain=input comment="Allow DNS and Winbox (TCP from LAN)" in-interface-list=LAN dst-port=53,8291 protocol=tcp
+add action=accept chain=input comment="Allow DNS and Winbox (TCP from LAN)" in-interface-list=LAN dst-port=53 protocol=tcp
 add action=accept chain=input comment="Rate limit Winbox (new TCP)" protocol=tcp dst-port=8291 in-interface-list=LAN connection-state=new limit=10,5
-add action=drop chain=input comment="Drop All Other Input" log-prefix=drop-input:
+add action=drop chain=input comment="Block WAN to Router Services" in-interface-list=WAN log=yes log-prefix="DROP-WAN: "
 
 # FORWARD Chain
 add action=fasttrack-connection chain=forward comment="Fasttrack Established Connections" connection-state=established,related hw-offload=yes
 add action=accept chain=forward comment="Allow Established/Related/Untracked" connection-state=established,related,untracked
-add action=drop chain=forward comment="Drop Invalid" connection-state=invalid
+add action=drop chain=forward comment="Drop Invalid" connection-state=invalid log=yes log-prefix="DROP-FWD-INVALID: "
 add action=accept chain=forward comment="Allow LAN to WAN" in-interface-list=LAN out-interface-list=WAN
 add action=accept chain=forward comment="Allow WireGuard to LAN" in-interface=wireguard1 out-interface-list=LAN
-add action=drop chain=forward comment="Drop All Other Forwarded Traffic"
+add action=accept chain=forward comment="Allow LAN to WireGuard" in-interface-list=LAN out-interface=wireguard1
+add action=drop chain=forward comment="Drop All Else" log=yes log-prefix="DROP-FWD-DEFAULT: "
 /ip firewall nat add action=masquerade chain=srcnat out-interface-list=WAN
 
 
