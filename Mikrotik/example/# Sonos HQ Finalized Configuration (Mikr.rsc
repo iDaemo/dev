@@ -60,7 +60,7 @@ add action=drop chain=forward comment="Drop Invalid" connection-state=invalid lo
 add action=accept chain=forward comment="Port Forwarding" connection-nat-state=dstnat log-prefix=fw-portfwd:
 add action=accept chain=forward comment="VLAN → WAN" in-interface-list=VLANS out-interface-list=WAN
 add action=accept chain=forward comment="WireGuard → VLAN" in-interface=wg-sonoshq out-interface-list=VLANS
-add action=accept chain=forward comment="VLAN → WireGuard" in-interface=VLANS out-interface-list=wg-sonoshq
+add action=accept chain=forward comment="VLAN → WireGuard" in-interface-list=VLANS out-interface=wg-sonoshq
 add action=drop chain=forward comment="Drop All Else" log-prefix=drop-forward:
 
 # --- CHAIN: ChainForwardAll ---
