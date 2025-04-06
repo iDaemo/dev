@@ -10,7 +10,7 @@
 #######################################
 
 # name the device being configured
-/system identity set name=COCOTAM
+/system identity set name=SONOSRACK
 
 #######################################
 # Bridge
@@ -72,7 +72,7 @@ add interface=wlan1 signal-range=-90..-71 allow-signal-out-of-range=15s comment=
 
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=40
 /interface list member add interface=VLAN40 list=LAN
-/interface list member add interface=ether1 list=WAN
+/interface list member add interface=ether1 list=InterfaceListVlan40
 /interface list member add interface=ether2 list=InterfaceListVlan40
 /interface list member add interface=ether3 list=InterfaceListVlan40
 /interface list member add interface=ether4 list=InterfaceListVlan40
