@@ -135,7 +135,7 @@ add chain=forward action=drop comment="Drop ALL"
 
 /ipv6 settings set disable-ipv6=yes
 /ipv6 nd set [ find default=yes ] disabled=yes
-/ip cloud set ddns-enabled=no ddns-update-interval=1d update-time=no
+#/ip cloud set ddns-enabled=no ddns-update-interval=1d update-time=no
 /system ntp client servers add address=time.cloudflare.com
 /system ntp client set enabled=yes
 /system clock set time-zone-name=Asia/Bangkok
