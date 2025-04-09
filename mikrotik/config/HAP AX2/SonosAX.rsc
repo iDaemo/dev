@@ -61,7 +61,7 @@ add action=drop chain=forward comment="Drop all else"
 /system identity set name=SonosRACKAX
 /system note set show-at-login=no
 /system ntp client set enabled=yes
-/system ntp client servers add address=time.cloudflare.com
+#/system ntp client servers add address=time.cloudflare.com
 /user add name=gle group=full password=thaigaming
 /user add name=sonos group=full password=33338888
 /user remove 0
