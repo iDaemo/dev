@@ -1,4 +1,4 @@
-# 2025-04-14 05:49:23 by RouterOS 7.18.2
+# 2025-04-14 05:55:13 by RouterOS 7.18.2
 # software id = 04H0-FDC6
 #
 # model = CCR2004-16G-2S+
@@ -14,8 +14,8 @@
 /interface ethernet set [ find default-name=ether15 ] name=ether15-trunk
 /interface ethernet set [ find default-name=ether16 ] name=ether16-apfl3
 /interface ethernet set [ find default-name=sfp-sfpplus2 ] name=sfp-sfpplus2-apfl2
-/interface pppoe-client add add-default-route=yes disabled=no interface=ether1-wan max-mtu=1492 name=Trueonline service-name=Trueonline use-peer-dns=yes user=9605418601@fiberhome
-/interface wireguard add listen-port=13231 mtu=1420 name=wg-sonoshq
+/interface pppoe-client add add-default-route=yes disabled=no interface=ether1-wan max-mtu=1492 name=Trueonline password=Password service-name=Trueonline use-peer-dns=yes user=9605418601@fiberhome
+/interface wireguard add listen-port=13231 mtu=1420 name=wg-sonoshq private-key="0P7UrLurunhoIkU4+cUp3wjS3XbL0uUeqr4gbm/po3E="
 /interface vlan add interface=BRI-TEST name=VLAN10-LOCAL vlan-id=10
 /interface vlan add interface=BRI-TEST name=VLAN11-WIFI vlan-id=11
 /interface vlan add interface=BRI-TEST name=VLAN12-DANTE vlan-id=12
