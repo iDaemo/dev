@@ -20,43 +20,42 @@
 /interface vlan add interface=BRI-TEST name=VLAN11-WIFI vlan-id=11
 /interface vlan add interface=BRI-TEST name=VLAN12-DANTE vlan-id=12
 /interface vlan add interface=BRI-TEST name=VLAN13-AURABUILDING vlan-id=13
-/interface vlan add interface=BRI-TEST name=VLAN20-LIGHT vlan-id=20
-/interface macvlan add disabled=yes interface=VLAN10-LOCAL mac-address=6A:3D:D2:1F:DA:E6 name=macvlan10
-/interface macvlan add disabled=yes interface=VLAN11-WIFI mac-address=8A:A8:5C:3A:10:AA name=macvlan11
+/interface vlan add interface=BRI-TEST name=VLAN14-LIGHT vlan-id=14
 /interface list add name=WAN
 /interface list add name=InterfaceListVlan10
 /interface list add name=InterfaceListVlan11
 /interface list add name=InterfaceListVlan12
-/interface list add name=VLANS
-/interface list add name=Manage
-/interface list add name=TRUSTVLAN
-/interface list add name=MGNT
 /interface list add name=InterfaceListVlan13
+/interface list add name=InterfaceListVlan14
+/interface list add name=VLANS
+/interface list add name=MGMT
 /ip pool add name=POOL10 ranges=192.168.10.101-192.168.10.249
 /ip pool add name=POOL11 ranges=192.168.11.101-192.168.11.249
 /ip pool add name=POOL12 ranges=192.168.12.101-192.168.12.249
-/ip pool add name=pool_MNGN ranges=192.168.99.2-192.168.99.20
 /ip pool add name=POOL13 ranges=192.168.13.101-192.168.13.249
+/ip pool add name=POOL14 ranges=192.168.14.101-192.168.14.249
+/ip pool add name=pool_MGMT ranges=192.168.99.2-192.168.99.20
+
 /ip dhcp-server add add-arp=yes address-pool=POOL10 interface=VLAN10-LOCAL lease-time=1h name=dhcp-vlan10
 /ip dhcp-server add add-arp=yes address-pool=POOL11 interface=VLAN11-WIFI lease-time=1h name=dhcp-vlan11
 /ip dhcp-server add add-arp=yes address-pool=POOL12 interface=VLAN12-DANTE lease-time=1h name=dhcp-vlan12
 /ip dhcp-server add add-arp=yes address-pool=POOL13 interface=VLAN13-AURABUILDING lease-time=1h name=dhcp-vlan13
+/ip dhcp-server add add-arp=yes address-pool=POOL14 interface=VLAN14-LIGHT lease-time=1h name=dhcp-vlan14
 /ip smb users set [ find default=yes ] disabled=yes
 /port set 0 name=serial0
 /port set 1 name=serial1
 /system logging action add name=syslog remote=192.168.10.250 remote-log-format=syslog syslog-facility=syslog target=remote
-/interface bridge filter add action=drop chain=forward comment="Drop all IPv6 mDNS" dst-mac-address=18:FD:74:82:56:68/FF:FF:FF:FF:FF:FF log=yes log-prefix=drop.mdns.ipv6 mac-protocol=ipv6
+/interface bridge filter add action=drop chain=forward comment="Drop all IPv6 mDNS" disabled=yes dst-mac-address=18:FD:74:82:56:68/FF:FF:FF:FF:FF:FF log=yes log-prefix=drop.mdns.ipv6 mac-protocol=ipv6
 /interface bridge filter add action=accept chain=forward comment="Allow mDNS only" disabled=yes dst-address=224.0.0.251/32 dst-mac-address=01:00:5E:00:00:FB/FF:FF:FF:FF:FF:FF dst-port=5353 in-bridge=*23 ip-protocol=udp log-prefix=mdns: mac-protocol=ip out-bridge=*23 src-port=5353
 /interface bridge filter add action=drop chain=forward comment="Drop all other L2 traffic" disabled=yes in-bridge=*23 log-prefix=dropmds: out-bridge=*23
 /interface bridge nat add action=src-nat chain=srcnat comment="SNAT to Primary VLAN bridge" disabled=yes dst-mac-address=01:00:5E:00:00:FB/FF:FF:FF:FF:FF:FF log-prefix=src-tovlan to-src-mac-address=18:FD:74:82:56:68
 /interface bridge port add bridge=BRI-TEST fast-leave=yes frame-types=admit-only-vlan-tagged interface=ether15-trunk internal-path-cost=10 path-cost=10 trusted=yes
-/interface bridge port add bridge=BRI-TEST interface=macvlan10 trusted=yes
-/interface bridge port add bridge=BRI-TEST interface=macvlan11 trusted=yes
 /interface bridge port add bridge=BRI-TEST ingress-filtering=no interface=ether2-oob pvid=99 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan10 internal-path-cost=10 path-cost=10 pvid=10 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan11 internal-path-cost=10 path-cost=10 pvid=11 trusted=yes
 /interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan12 internal-path-cost=10 path-cost=10 pvid=12 trusted=yes
-/interface bridge port add bridge=BRI-TEST interface=InterfaceListVlan13 pvid=13 trusted=yes
+/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan13 internal-path-cost=10 path-cost=10 pvid=13 trusted=yes
+/interface bridge port add bridge=BRI-TEST frame-types=admit-only-untagged-and-priority-tagged interface=InterfaceListVlan14 internal-path-cost=10 path-cost=10 pvid=14 trusted=yes
 /interface bridge settings set use-ip-firewall=yes
 /ip firewall connection tracking set udp-timeout=10s
 /ip neighbor discovery-settings set discover-interface-list=VLANS
@@ -64,16 +63,20 @@
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=10
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=11
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=12
-/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=99
 /interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=13
-/interface detect-internet set detect-interface-list=all
+/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST,ether15-trunk vlan-ids=14
+/interface bridge vlan add bridge=BRI-TEST tagged=BRI-TEST vlan-ids=99
+/interface detect-internet set detect-interface-list=WAN
 /interface list member add interface=Trueonline list=WAN
+/interface list member add interface=ether2-oob list=Manage
 /interface list member add interface=ether3 list=InterfaceListVlan10
 /interface list member add interface=ether4 list=InterfaceListVlan10
 /interface list member add interface=ether5 list=InterfaceListVlan10
 /interface list member add interface=ether6 list=InterfaceListVlan10
 /interface list member add interface=ether7 list=InterfaceListVlan10
 /interface list member add interface=ether8 list=InterfaceListVlan10
+/interface list member add interface=ether9-nas1 list=InterfaceListVlan10
+/interface list member add interface=ether10-nas2 list=InterfaceListVlan10
 /interface list member add interface=ether11--dvs list=InterfaceListVlan10
 /interface list member add interface=ether13-Aura-building list=InterfaceListVlan13
 /interface list member add interface=ether14 list=InterfaceListVlan10
@@ -82,14 +85,11 @@
 /interface list member add interface=VLAN10-LOCAL list=VLANS
 /interface list member add interface=VLAN11-WIFI list=VLANS
 /interface list member add interface=VLAN12-DANTE list=VLANS
-/interface list member add interface=ether2-oob list=Manage
-/interface list member add interface=ether9-nas1 list=InterfaceListVlan10
-/interface list member add interface=ether10-nas2 list=InterfaceListVlan10
-/interface list member add disabled=yes interface=VLAN10-LOCAL list=TRUSTVLAN
-/interface list member add disabled=yes interface=VLAN11-WIFI list=TRUSTVLAN
-/interface list member add interface=wg-sonoshq list=VLANS
-/interface list member add interface=sfp-sfpplus1 list=InterfaceListVlan10
 /interface list member add interface=VLAN13-AURABUILDING list=VLANS
+/interface list member add interface=VLAN14-LIGHT list=VLANS
+
+/interface list member add interface=wg-sonoshq list=VLANS
+
 /interface ovpn-server server add mac-address=FE:42:A7:26:FD:64 name=ovpn-server1
 /interface wireguard peers add allowed-address=10.0.0.2/32 comment=Gle interface=wg-sonoshq name=peer4 public-key="MaHvrXErTnQ4m7gfoRR0Kbz8zKnIM9C8LlnFu1WGXRg="
 /interface wireguard peers add allowed-address=10.0.0.3/32 interface=wg-sonoshq name=peer5 public-key="MNjdDqRmK4C0zvfqqrYoeTq1Fy7qpbqOBf23gJiDrmU="
@@ -117,10 +117,11 @@
 /ip address add address=192.168.10.1/24 interface=VLAN10-LOCAL network=192.168.10.0
 /ip address add address=192.168.11.1/24 interface=VLAN11-WIFI network=192.168.11.0
 /ip address add address=192.168.12.1/24 interface=VLAN12-DANTE network=192.168.12.0
+/ip address add address=192.168.13.1/24 interface=VLAN13-AURABUILDING network=192.168.13.0
+/ip address add address=192.168.14.1/24 interface=VLAN14-LIGHT network=192.168.14.0
 /ip address add address=10.0.0.1/24 interface=wg-sonoshq network=10.0.0.0
 /ip address add address=192.168.99.1/24 interface=ether2-oob network=192.168.99.0
-/ip address add address=192.168.0.1/24 interface=BRI-TEST network=192.168.0.0
-/ip address add address=192.168.13.1/24 interface=VLAN13-AURABUILDING network=192.168.13.0
+
 /ip cloud set ddns-update-interval=1d update-time=no
 /ip dhcp-client add disabled=yes interface=ether1-wan use-peer-dns=no
 /ip dhcp-server lease add address=192.168.10.13 client-id=1:b0:1f:8c:c7:cd:c4 mac-address=B0:1F:8C:C7:CD:C4 server=dhcp-vlan10
@@ -135,30 +136,34 @@
 /ip dhcp-server network add address=192.168.11.0/24 dns-server=192.168.11.1 gateway=192.168.11.1
 /ip dhcp-server network add address=192.168.12.0/24 dns-server=192.168.12.1 gateway=192.168.12.1
 /ip dhcp-server network add address=192.168.13.0/24 dns-server=192.168.13.1 gateway=192.168.13.1
+/ip dhcp-server network add address=192.168.14.0/24 dns-server=192.168.14.1 gateway=192.168.14.1
 /ip dhcp-server network add address=192.168.99.0/24 dns-server=192.168.99.1 gateway=192.168.99.1
-/ip dns set allow-remote-requests=yes cache-max-ttl=3d cache-size=4096KiB doh-max-concurrent-queries=500 doh-max-server-connections=50 max-concurrent-queries=1000 max-concurrent-tcp-sessions=200 servers=1.1.1.1,1.0.0.1 verify-doh-cert=yes
+/ip dns set allow-remote-requests=yes cache-max-ttl=7d cache-size=4096KiB doh-max-concurrent-queries=500 doh-max-server-connections=50 max-concurrent-queries=1000 max-concurrent-tcp-sessions=200 servers=1.1.1.1,1.0.0.1 verify-doh-cert=yes
 /ip firewall address-list add address=192.168.10.141 list=admin
 /ip firewall address-list add address=192.168.11.224 list=admin
-/ip firewall filter add action=accept chain=input in-interface-list=Manage log=yes log-prefix=admin:
+
+/ip firewall filter add action=accept chain=input in-interface-list=MGMT log=yes log-prefix=admin:
 /ip firewall filter add action=accept chain=input comment="ACCEPT established,related,untracked" connection-state=established,related,untracked
 /ip firewall filter add action=drop chain=input comment="DROP INVALID" connection-state=invalid log-prefix="DROP-Invalid :"
+/ip firewall filter add action=accept chain=input comment="Allow Wireguard" dst-port=13231 log-prefix=req-in-fw-wg: protocol=udp
 /ip firewall filter add action=accept chain=input comment="Allow ICMP" protocol=icmp
 /ip firewall filter add action=accept chain=input comment="Allow DNS" dst-port=53 log-prefix=req-in-fw: protocol=udp
 /ip firewall filter add action=accept chain=input comment="Allow DNS" dst-port=53 log-prefix=req-in-fw: protocol=tcp
-/ip firewall filter add action=accept chain=input comment="Allow Wireguard" dst-port=13231 log-prefix=req-in-fw-wg: protocol=udp
 /ip firewall filter add action=accept chain=input comment="Allow Drivesynce" dst-port=6690 log-prefix=req-in-fw-drivesynce: protocol=tcp
-/ip firewall filter add action=accept chain=input dst-port=8291 protocol=tcp
-/ip firewall filter add action=accept chain=input in-interface-list=VLANS log-prefix=vlan-req:
+/ip firewall filter add action=accept chain=input comment="Rate limit Winbox (new TCP)" protocol=tcp dst-port=8291 in-interface-list=VLANS connection-state=new limit=10,5
+/ip firewall filter add action=accept chain=input in-interface-list=VLANS
 /ip firewall filter add action=drop chain=input comment="drop all else" log-prefix="DROP-inputWAN :"
+
 /ip firewall filter add action=fasttrack-connection chain=forward comment="defconf: fasttrack" connection-mark=no-mark connection-state=established,related hw-offload=yes
 /ip firewall filter add action=accept chain=forward comment="defconf: accept established,related, untracked" connection-state=established,related,untracked
 /ip firewall filter add action=drop chain=forward comment="defconf: drop invalid" connection-state=invalid log-prefix="DROP-invalid-forward :"
 /ip firewall filter add action=accept chain=forward comment="Port Forwarding" connection-nat-state=dstnat disabled=yes log-prefix=fw-portfwd:
-/ip firewall filter add action=accept chain=forward comment="VLAN  WAN" in-interface-list=VLANS out-interface-list=WAN
+/ip firewall filter add action=accept chain=forward comment="Allow Internet" in-interface-list=VLANS out-interface-list=WAN
 /ip firewall filter add action=accept chain=forward comment="WireGuard  VLAN" in-interface=wg-sonoshq out-interface-list=VLANS
 /ip firewall filter add action=accept chain=forward comment="VLAN  WireGuard" in-interface-list=VLANS out-interface=wg-sonoshq
 /ip firewall filter add action=drop chain=forward comment="Drop All Else" log-prefix=drop-forward:
 /ip firewall nat add action=masquerade chain=srcnat out-interface-list=WAN
+
 /ip firewall nat add action=dst-nat chain=dstnat disabled=yes dst-port=443 in-interface-list=WAN log-prefix=go protocol=tcp to-addresses=192.168.10.250 to-ports=443
 /ip firewall nat add action=dst-nat chain=dstnat disabled=yes dst-port=80 in-interface-list=WAN log-prefix=go protocol=tcp to-addresses=192.168.10.250 to-ports=80
 /ip firewall nat add action=dst-nat chain=dstnat comment="DSM Synology" disabled=yes dst-port=5655,5654 in-interface-list=WAN log-prefix=go protocol=tcp to-addresses=192.168.10.250 to-ports=5655
