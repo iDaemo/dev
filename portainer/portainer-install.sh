@@ -4,7 +4,7 @@ sudo timedatectl set-timezone Asia/Bangkok
 sudo apt update && sudo apt full-upgrade -y --autoremove
 sudo apt update && sudo apt upgrade -y
 sudo apt install ca-certificates curl
-sudo apt install unattended-upgrades
+
 
 ## prep for docker
 sudo install -m 0755 -d /etc/apt/keyrings
