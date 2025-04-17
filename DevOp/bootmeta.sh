@@ -1,3 +1,5 @@
+# This script is intended to be run on a cloud-init enabled system for GCP
+
 #!/bin/bash
 USERNAME="idaemon"
 PASSWORD="Thaigaing\$3101"
