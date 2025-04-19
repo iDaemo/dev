@@ -1,14 +1,14 @@
-# This script is intended to be run on a cloud-init enabled system for GCP
 #!/bin/bash
+set -e
+
 USERNAME="idaemon"
 PASSWORD="Thaigaing\$3101"
 
 if ! id "$USERNAME" &>/dev/null; then
-    useradd --badname -m -s /bin/bash "$USERNAME"
+    useradd -m -s /bin/bash "$USERNAME"
     echo "$USERNAME:$PASSWORD" | chpasswd
     usermod -aG sudo "$USERNAME"
 fi
-
 
 SSHD_CONFIG="/etc/ssh/sshd_config"
 cp "$SSHD_CONFIG" "${SSHD_CONFIG}.bak"
