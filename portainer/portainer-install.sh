@@ -43,16 +43,3 @@ sudo docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always \
 
 echo "Installation complete."
 echo "Please log out and log back in to use Docker as your user."
-# ...existing code...
-
-
-# (Optional) Configure unattended-upgrades if needed
-# sudo tee /etc/apt/apt.conf.d/50unattended-upgrades > /dev/null <<EOF
-# Unattended-Upgrade::AutoFixInterruptedDpkg "true";
-# Unattended-Upgrade::Mail "gle@sonoslibra.com";
-# Unattended-Upgrade::MailReport "only-on-error";
-# Unattended-Upgrade::Remove-Unused-Dependencies "true";
-# Unattended-Upgrade::Automatic-Reboot "true";
-# Unattended-Upgrade::Automatic-Reboot-Time "04:00";
-# EOF
-
