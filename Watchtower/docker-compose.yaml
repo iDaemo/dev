@@ -28,9 +28,9 @@ services:
       # - WATCHTOWER_MONITOR_ONLY=true
       # you can tell watchtower to do updates and restarts one by one - can be helpful
       - WATCHTOWER_ROLLING_RESTART=true
-      #- WATCHTOWER_NOTIFICATIONS=gotify
-      #- WATCHTOWER_NOTIFICATION_GOTIFY_URL=https://gotify.jimsgarage.co.uk
-      #- WATCHTOWER_NOTIFICATION_GOTIFY_TOKEN=/run/secrets/access_token
+      - WATCHTOWER_NOTIFICATIONS=gotify
+      - WATCHTOWER_NOTIFICATION_GOTIFY_URL=https://gotify.sonoslibra.com
+      - WATCHTOWER_NOTIFICATION_GOTIFY_TOKEN=/run/secrets/access_token
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     #  - /root/.docker/config.json:/config.json - Enable this when using a custom repo
