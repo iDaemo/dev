@@ -1,0 +1,6 @@
+/queue type
+add cake-flowmode=dual-srchost cake-nat=yes kind=cake name=cake-upload
+add cake-flowmode=dual-dsthost cake-nat=yes kind=cake name=cake-download
+/queue tree
+add bucket-size=0.01 max-limit=80M name=download packet-mark=no-mark parent=BRI-TEST queue=cake-download
+add bucket-size=0.01 max-limit=60M name=upload packet-mark=no-mark parent=ether1-wan queue=cake-upload
