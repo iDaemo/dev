@@ -8,7 +8,7 @@ services:
       # remove old images after update (useful for saving space)
       - WATCHTOWER_CLEANUP=true
       # the below will ignore labels set. It is worth checking out labels as that can be a more scalabe solution (automatic)
-      # - WATCHTOWER_DISABLE_CONTAINERS=traefik crowdsec bouncer-traefik deconz frigate home-assistant homeassistant-db
+      - WATCHTOWER_DISABLE_CONTAINERS=aura-api aura-client aura-cms sonos-api sonos-aura-cronjob sonos-aura-postgres sonos-client
       # the docker host can also be remote by specifying tcp
       # - DOCKER_HOST=tcp://hostname:port
       # how frequently to check for images (default is 24 hours)
