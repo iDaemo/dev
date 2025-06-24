@@ -23,7 +23,6 @@
 :local recordID "79e287776ea742f6df0d16cd5073f6cc"
 :local hostname "hq.sonoslibra.com"
 :local ipAddress "$newIP"
-_8bdzvZMDdtAMAfxsnXlaDsogZ5ksYyD4vV3g1ab
 
 # Validate variables
 :if (($apiToken = "") || ($zoneID = "") || ($recordID = "") || ($hostname = "") || ($ipAddress = "")) do={
