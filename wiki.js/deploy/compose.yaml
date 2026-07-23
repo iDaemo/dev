@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: wikijs-db
+    environment:
+      POSTGRES_DB: wikijs
+      POSTGRES_USER: wikiuser
+      POSTGRES_PASSWORD: 33338888 # 👈 เปลี่ยนรหัสผ่านตามต้องการ
+    volumes:
+      - /home/docker/wikijs/db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  wiki:
+    image: requarks/wiki:2
+    container_name: wikijs-app
+    depends_on:
+      - db
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: wikiuser
+      DB_PASS: 33338888 # 👈 ต้องตรงกับ POSTGRES_PASSWORD ด้านบน
+      DB_NAME: wikijs
+      PORT: 3000
+    volumes:
+      - /home/docker/wikijs/config:/wiki/config
+      - /home/docker/wikijs/data:/wiki/data
+    ports:
+      - 3030:3000 # 👈 หนีมา Port 3030 พ้นจากโซนชนเรียบร้อยครับ
+    restart: unless-stopped
