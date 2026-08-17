@@ -1,0 +1,18 @@
+# สคริปต์ Auto Login สำหรับระบบ Easy2WiFi (ห้อง 310)
+:local TargetPing "8.8.8.8";
+:local LoginURL "http://172.16.0.1/login";
+# ใส่รหัสผ่านของคุนแทนที่ข้อวามด้านล่าฉนี้
+:local LoginData "username=310&password=8679";
+
+# ตรวจสอบว่าอินเทอร์เน็ตใช้งานได้ปกติไหม
+:if ([:ping $TargetPing count=3] = 0) do={
+    :log warning "Internet is down (Web Auth required). Attempting to login to Easy2WiFi...";
+    
+    :do {
+        # ยิงคำสั่ง POST ล็อกอินเข้า Hotspot
+        /tool fetch http-method=post url=$LoginURL http-data=$LoginData keep-result=no;
+        :log info "Easy2WiFi Auto-login packet sent.";
+    } on-error={
+        :log error "Cannot connect to Easy2WiFi server (172.16.0.1)";
+    }
+}
