@@ -1,0 +1,59 @@
+// ==============================================================================
+// SonosLibra - Tailscale Access Control Policy (v5.3)
+// Tailnet: sonoslibra-engineering.github (ใช้บัญชี GitHub ของทีมร่วมกัน)
+//
+// วิธีใช้: Admin Console > Access controls > Edit file > วางทับทั้งไฟล์ > Save
+//
+// ผลลัพธ์:
+//   - บัญชีทีม (autogroup:member) -> เครื่องไซต์      : RustDesk TCP 21118
+//   - บัญชีทีม -> เครื่องของบัญชีตัวเอง (MacBook ฯลฯ) : ทุกพอร์ต
+//   - เครื่องไซต์ -> เครื่องไซต์อื่น                    : RustDesk TCP 21118 (รีโมทต่อจากไซต์หนึ่งไปอีกไซต์ได้)
+//   - เครื่องไซต์ -> MacBook / เครื่องของทีม            : บล็อก
+//
+// ถ้าต้องการเปิด RDP เพิ่ม ให้แก้ "tag:site-node:21118" เป็น "tag:site-node:21118,3389" ทั้งสองกฎ
+// ==============================================================================
+{
+    "tagOwners": {
+        "tag:site-node": ["autogroup:admin"]
+    },
+
+    "acls": [
+        // บัญชีทีม -> เครื่องไซต์: RustDesk Direct IP
+        {
+            "action": "accept",
+            "src":    ["autogroup:member"],
+            "dst":    ["tag:site-node:21118"]
+        },
+        // เครื่องไซต์ -> เครื่องไซต์อื่น: RustDesk (นั่งหน้าเครื่องไซต์ A แล้วรีโมทไปไซต์ B ได้)
+        {
+            "action": "accept",
+            "src":    ["tag:site-node"],
+            "dst":    ["tag:site-node:21118"]
+        },
+        // บัญชีทีม -> เครื่องของบัญชีตัวเอง (MacBook/โน้ตบุ๊กของทีม คุยกันได้ตามเดิม)
+        {
+            "action": "accept",
+            "src":    ["autogroup:member"],
+            "dst":    ["autogroup:self:*"]
+        }
+    ],
+
+    "ssh": [
+        {
+            "action": "check",
+            "src":    ["autogroup:member"],
+            "dst":    ["autogroup:self"],
+            "users":  ["autogroup:nonroot", "root"]
+        }
+    ],
+
+    // ตรวจอัตโนมัติทุกครั้งที่ Save
+    "tests": [
+        {
+            // เครื่องไซต์ต้องรีโมท RustDesk หากันได้ แต่พอร์ตอื่น (RDP / File share) ต้องปิด
+            "src":    "tag:site-node",
+            "accept": ["tag:site-node:21118"],
+            "deny":   ["tag:site-node:3389", "tag:site-node:445"]
+        }
+    ]
+}

@@ -1,0 +1,4 @@
+{
+  "[powershell]": { "files.encoding": "utf8bom", "files.eol": "\r\n" },
+  "[bat]":        { "files.encoding": "utf8",    "files.eol": "\r\n" }
+}
