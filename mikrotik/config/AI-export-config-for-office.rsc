@@ -60,10 +60,13 @@ set [ find default=yes ] disabled=yes
 add cake-flowmode=dual-dsthost cake-nat=yes kind=cake name=cake-download
 add cake-flowmode=dual-srchost cake-nat=yes kind=cake name=cake-upload
 /queue tree
-add bucket-size=0.01 max-limit=1G name=download packet-mark=no-mark parent=\
-    BRI-TEST queue=cake-download
-add bucket-size=0.01 max-limit=1G name=upload packet-mark=no-mark parent=\
-    ether1-wan queue=cake-upload
+# >>> FIX #8: queues now match only WAN-marked packets (see /ip firewall mangle)
+# >>> was: packet-mark=no-mark, parent=BRI-TEST / ether1-wan (shaped everything, bypassed by fasttrack)
+# >>> TODO: set max-limit to ~90-95% of your real ISP speed (1G is a placeholder)
+add bucket-size=0.01 max-limit=1G name=download packet-mark=wan-down parent=\
+    global queue=cake-download
+add bucket-size=0.01 max-limit=1G name=upload packet-mark=wan-up parent=\
+    Trueonline queue=cake-upload
 /system logging action
 set 3 remote=0.0.0.0
 /system script
@@ -348,6 +351,22 @@ add address=192.168.10.251 name=portal.lan.local type=A
 /ip firewall address-list
 add address=192.168.10.141 list=admin
 add address=192.168.11.224 list=admin
+/ip firewall mangle
+# >>> FIX #8 START: mark WAN connections so the existing fasttrack rule
+# >>> (connection-mark=no-mark) skips them and CAKE can shape them
+add action=mark-connection chain=forward comment="FIX8 conn from WAN" \
+    connection-mark=no-mark in-interface-list=WAN new-connection-mark=wan-conn \
+    passthrough=yes
+add action=mark-connection chain=forward comment="FIX8 conn to WAN" \
+    connection-mark=no-mark new-connection-mark=wan-conn out-interface-list=WAN \
+    passthrough=yes
+add action=mark-packet chain=forward comment="FIX8 download packets" \
+    connection-mark=wan-conn in-interface-list=WAN new-packet-mark=wan-down \
+    passthrough=no
+add action=mark-packet chain=forward comment="FIX8 upload packets" \
+    connection-mark=wan-conn new-packet-mark=wan-up out-interface-list=WAN \
+    passthrough=no
+# >>> FIX #8 END
 /ip firewall filter
 add action=accept chain=input in-interface-list=Manage log=yes log-prefix=\
     admin:

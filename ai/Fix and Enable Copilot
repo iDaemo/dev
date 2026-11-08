@@ -1,0 +1,59 @@
+#!/bin/bash
+printf '\e[8;25;94t'
+printf '\e[0;40;97m'
+printf "\e]0;Fix and enable Copilot\a"
+clear
+sys_lang=$(defaults read -g AppleLanguages | tr -d '[:space:]' | cut -c3-4)
+if [[ "$sys_lang" == "ru" ]]; then
+Info1="Введите пароль от вашего Mac, который вы используете при входе в систему."
+Info2="При вводе пароль не будет отображаться."
+Info3="Просто введите его и нажмите клавишу Enter."
+Info4="Готово."
+else
+Info1="Type the password for your Mac that you use when you log in."
+Info2="The password will not be visible when you type it."
+Info3="Just type it and press the Enter key."
+Info4="Done."
+fi
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+cd "$parent_path"
+App="/Applications/PDF Expert.app"
+
+if [[ "$sys_lang" == "ru" ]]; then
+echo -e ""
+echo -e ""
+echo -e "	$Info1"
+echo -e "	$Info2"
+echo -e "	$Info3"
+echo -e ""
+echo -e ""
+else
+echo -e ""
+echo -e ""
+echo -e "	$Info1"
+echo -e "	$Info2"
+echo -e "	$Info3"
+echo -e ""
+echo -e ""
+fi
+sudo xattr -r -c "$App"
+
+sudo xattr -r -d com.apple.quarantine "$App"
+
+sudo codesign --force --deep --sign - "$App"
+
+defaults write com.readdle.PDFExpert-Mac TweakEnableCopilot -bool true
+
+if [[ "$sys_lang" == "ru" ]]; then
+echo -e ""
+echo -e ""
+echo -e "$Info4"
+echo -e ""
+echo -e ""
+else
+echo -e ""
+echo -e ""
+echo -e "$Info4"
+echo -e ""
+echo -e ""
+fi
