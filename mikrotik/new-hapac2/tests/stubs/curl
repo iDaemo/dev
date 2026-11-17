@@ -1,0 +1,7 @@
+#!/bin/bash
+# Fake curl: logs args, writes "fake" to the -o target.
+echo "curl $*" >> "${STUB_LOG:-/dev/null}"
+out=""
+while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift;; esac; shift; done
+[ -n "$out" ] && echo fake > "$out"
+exit 0
