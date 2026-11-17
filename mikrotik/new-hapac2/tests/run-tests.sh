@@ -20,6 +20,9 @@ assert_fail() { # <name> <cmd...>
 assert_contains() { # <haystack> <needle> <name>
   case "$1" in *"$2"*) ;; *) echo "    assert_contains failed: $3"; echo "      missing: [$2]"; exit 1;; esac
 }
+require_fn() { # <fn...> : fail the test if a function is not defined
+  for f in "$@"; do type "$f" >/dev/null 2>&1 || { echo "    missing function: $f"; exit 1; }; done
+}
 assert_not_contains() { # <haystack> <needle> <name>
   case "$1" in *"$2"*) echo "    assert_not_contains failed: $3"; echo "      found: [$2]"; exit 1;; esac
 }
