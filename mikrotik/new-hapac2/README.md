@@ -37,8 +37,8 @@ open -e projects/raynue.conf
 | ค่า | ความหมาย | ข้อกำหนด |
 |---|---|---|
 | `IDENTITY` | ชื่อเครื่อง | A-Z a-z 0-9 `_` `-` ห้ามเว้นวรรค |
-| `SSID` | ชื่อ WiFi | |
-| `WIFI_PASS` | รหัส WiFi | 8-63 ตัว |
+| `SSID` | ชื่อ WiFi | ไม่เกิน 32 bytes (ภาษาไทย 1 ตัว = 3 bytes) |
+| `WIFI_PASS` | รหัส WiFi | 8-63 ตัว ภาษาอังกฤษ/ตัวเลข/สัญลักษณ์ (ห้ามภาษาไทย) |
 | `USER_NAME` | user สำหรับเข้า Winbox (admin จะถูกลบ) | A-Z a-z 0-9 `_` `-` |
 | `USER_PASS` | รหัสของ user นั้น | อย่างน้อย 8 ตัว |
 | `WG_ADDRESS` | IP ของเครื่องในวง WireGuard | แบบ `10.0.0.40/24` |
@@ -89,6 +89,7 @@ open -e projects/raynue.conf
 | อ่านไฟล์โปรเจคไม่ได้ | ชื่อไฟล์ผิด หรือยังไม่ได้ copy จาก `projects/example.conf` |
 | ค่าในไฟล์โปรเจคไม่ถูกต้อง | ดูบรรทัด ❌ ด้านบนว่าค่าไหนผิด แก้ตามตารางค่าด้านบน (`CHANGE_ME` ต้องเปลี่ยนเป็นรหัสจริง) |
 | ไม่พบไฟล์ ... ใน packages | ยังไม่ได้รัน `./fetch-packages.sh` — ต้องรันที่ที่มีอินเทอร์เน็ต |
+| Mac กำลังต่อ 192.168.88.1 ผ่าน WiFi ไม่ใช่สาย LAN | ปิด WiFi ของ Mac แล้วรันใหม่ (Mac กำลังคุยกับ router ตัวอื่นผ่าน WiFi) |
 | ping 192.168.88.1 ไม่ได้ | สายไม่ได้เสียบ ether2-5 / Mac ไม่ได้ IP `192.168.88.x` / router ไม่ใช่ default config (กดปุ่ม reset ค้าง ~5 วิ จนไฟกระพริบ แล้วปล่อย) |
 | สร้าง SSH key ไม่ได้ | Mac มีปัญหา ลองปิด Terminal เปิดใหม่ |
 | login ไม่สำเร็จ | รหัส admin ผิด — ดูสติกเกอร์ หรือ reset router กลับ default |
@@ -103,6 +104,7 @@ open -e projects/raynue.conf
 | อัปโหลด wifi-qcom-ac ไม่ได้ | เหมือนข้อ flash ไม่พอ |
 | ติดตั้ง wifi-qcom-ac ไม่สำเร็จ | Winbox → New Terminal → `/system resource print` ดู free-hdd-space และดู Log แล้วส่งภาพให้ทีม engineer |
 | สร้างไฟล์ config ไม่ได้ / อัปโหลด config ไม่ได้ | รันใหม่; ถ้ายังไม่ได้ ส่งข้อความ error ให้ทีม engineer |
+| router ไม่ยอมล้าง config | รันใหม่อีกครั้ง; ถ้ายังไม่ได้ Winbox → Files ดูว่ามี `router-config.rsc` และดู Log ส่งให้ทีม engineer |
 | ping 192.168.40.1 ไม่ได้ | ถอด-เสียบสาย LAN ใหม่ แล้วลอง Winbox → Neighbors (เข้าด้วย MAC) ถ้าเข้าได้ ดู Log ว่า config หยุดตรงไหน ส่งให้ทีม engineer |
 
 **หลังขั้น 5 แล้วอยากเริ่มใหม่:** router ไม่ใช่ default config แล้ว (เข้า `192.168.88.1` ไม่ได้)
@@ -114,5 +116,6 @@ open -e projects/raynue.conf
 
 - เปลี่ยนเวอร์ชัน RouterOS: แก้ `ROS_VERSION` ใน `version.sh` แล้วรัน `./fetch-packages.sh`
 - แก้ config: แก้ `router-config.template.rsc` (ค่าเฉพาะโปรเจคใช้ `{{KEY}}`) — ถ้าเพิ่ม key ใหม่ต้องเพิ่มใน `CONF_KEYS` ใน `lib.sh` และ `projects/example.conf`
+- SSH key ของตัวติดตั้งเก็บไว้ที่ `.installer_key/` (ไม่ commit) — ต้องเก็บไว้ เพราะเมื่อ router มี key แล้วจะไม่รับรหัส admin ทาง SSH อีก การรันซ้ำจึงต้องใช้ key เดิม
 - รันเทสต์: `bash tests/run-tests.sh` (ใช้ ssh/scp/ping จำลอง ไม่ต้องมี router)
 - สิ่งที่เทสต์ไม่ครอบคลุม ต้องลองกับเครื่องจริง: login ครั้งแรก, การยืนยัน reboot ผ่าน SSH, พื้นที่ flash จริง, wifi1 = 2.4GHz / wifi2 = 5GHz

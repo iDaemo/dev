@@ -56,3 +56,8 @@ test_render_unknown_placeholder_fails() {
   echo '/system identity set name={{FOO}}' > "$T/tpl.rsc"
   assert_fail "unknown placeholder" render_config "$T/tpl.rsc" "$T/out.rsc"
 }
+
+test_validate_ssid_32_bytes_ok()   { assert_ok   "32 ascii" validate_with SSID=12345678901234567890123456789012; }
+test_validate_ssid_33_bytes()      { assert_fail "33 ascii" validate_with SSID=123456789012345678901234567890123; }
+test_validate_thai_ssid_too_long() { assert_fail "11 thai chars = 33 bytes" validate_with SSID=กขคงจฉชซฌญฎ; }
+test_validate_thai_wifi_pass()     { assert_fail "non-ascii wpa pass" validate_with WIFI_PASS=รหัสผ่านไทยยาว; }

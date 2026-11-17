@@ -10,6 +10,9 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 PKG_DIR="${PKG_DIR:-$HERE/packages}"
 CONFIG_IP="${CONFIG_IP:-192.168.40.1}"
 TIMEOUT_CONFIG="${TIMEOUT_CONFIG:-300}"
+WIFI_WAIT="${WIFI_WAIT:-60}"
+# kept between runs: once a key is imported RouterOS refuses admin password login over SSH
+INSTALLER_KEY="${INSTALLER_KEY:-$HERE/.installer_key/installer}"
 MIN_V6="6.49"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -30,6 +33,11 @@ preflight() {
   for f in "$ROUTEROS_NPK" "$WIFI_NPK"; do
     [ -s "$PKG_DIR/$f" ] || die "ไม่พบไฟล์ $f ใน $PKG_DIR" "รัน ./fetch-packages.sh ที่ออฟฟิศ (ต้องมีเน็ต) ก่อนออกหน้างาน"
   done
+  BIND_IF="$(route_if "$ROUTER_IP")"
+  if [ -n "$BIND_IF" ] && [ "$BIND_IF" = "$(wifi_dev)" ]; then
+    die "Mac กำลังต่อ $ROUTER_IP ผ่าน WiFi ไม่ใช่สาย LAN" "ปิด WiFi ของ Mac (มุมขวาบน) แล้วรันใหม่"
+  fi
+  export BIND_IF
   ping_ok "$ROUTER_IP" || die "ping $ROUTER_IP ไม่ได้" "เสียบสาย LAN ที่ ether2-ether5 และเช็คว่า Mac ได้ IP 192.168.88.x (router ต้องเป็น default config)"
   echo "   โปรเจค: $IDENTITY  |  WiFi: $SSID"
   if [ "${ASSUME_YES:-0}" != 1 ]; then
@@ -41,18 +49,24 @@ preflight() {
 # ---------------------------------------------------------------- 2. login
 login() {
   step 2 "เข้าสู่ระบบ router"
+  if [ -s "$INSTALLER_KEY" ] && SSH_KEY="$INSTALLER_KEY" ros_cmd ':put ok' >/dev/null 2>&1; then
+    SSH_KEY="$INSTALLER_KEY"; echo "   ✅ เข้าระบบด้วย key เดิม (รันซ้ำ)"; return
+  fi
+  if [ ! -s "$INSTALLER_KEY" ]; then
+    mkdir -p "$(dirname "$INSTALLER_KEY")" && rm -f "$INSTALLER_KEY.pub" \
+      && ssh-keygen -q -t rsa -b 2048 -N "" -f "$INSTALLER_KEY" >/dev/null || die "สร้าง SSH key ไม่ได้"
+  fi
   echo "   ใส่รหัส admin (เครื่องใหม่: ดูที่สติกเกอร์ใต้เครื่อง หรือกด Enter ถ้าไม่มีรหัส)"
-  ssh-keygen -q -t rsa -b 2048 -N "" -f "$WORK/installer" >/dev/null || die "สร้าง SSH key ไม่ได้"
-  SSH_CTL="$WORK/ctl"
+  SSH_KEY=""; SSH_CTL="$WORK/ctl"
   # shellcheck disable=SC2046
   ssh $(ssh_opts) -o ControlMaster=yes -o ControlPersist=120 -N -f "$ROUTER_USER@$ROUTER_IP" \
     || die "login ไม่สำเร็จ" "เช็ครหัส admin; ถ้าลืม ให้กดปุ่ม reset ค้างจนไฟกระพริบเพื่อกลับเป็น default"
-  ros_upload "$WORK/installer.pub" installer.pub || die "อัปโหลด SSH key ไม่ได้"
+  ros_upload "$INSTALLER_KEY.pub" installer.pub || die "อัปโหลด SSH key ไม่ได้"
   ros_cmd "/user ssh-keys import public-key-file=installer.pub user=$ROUTER_USER" >/dev/null \
     || die "import SSH key ไม่ได้"
   # shellcheck disable=SC2046
   ssh $(ssh_opts) -O exit "$ROUTER_USER@$ROUTER_IP" >/dev/null 2>&1
-  SSH_CTL=""; SSH_KEY="$WORK/installer"
+  SSH_CTL=""; SSH_KEY="$INSTALLER_KEY"
   ros_cmd ':put ok' >/dev/null || die "login ด้วย SSH key ไม่ได้"
   echo "   ✅ เข้าระบบแล้ว"
 }
@@ -95,10 +109,13 @@ install_wifi() {
     ros_upload "$PKG_DIR/$WIFI_NPK" "$WIFI_NPK" || die "อัปโหลด wifi-qcom-ac ไม่ได้"
     ros_reboot || die "router ไม่กลับมาหลังติดตั้ง wifi-qcom-ac" "รอ 2-3 นาทีแล้วรันใหม่"
   fi
-  if ! has_pkg wifi-qcom-ac || ! has_iface wifi1 || ! has_iface wifi2; then
-    die "ติดตั้ง wifi-qcom-ac ไม่สำเร็จ (ไม่เจอ wifi1/wifi2)" \
+  # wifi interfaces appear some seconds after SSH is already up
+  local end=$((SECONDS + WIFI_WAIT))
+  until has_pkg wifi-qcom-ac && has_iface wifi1 && has_iface wifi2; do
+    [ $SECONDS -ge $end ] && die "ติดตั้ง wifi-qcom-ac ไม่สำเร็จ (ไม่เจอ wifi1/wifi2)" \
         "ใน Winbox: New Terminal พิมพ์ /system resource print ดู free-hdd-space และดู Log แล้วส่งให้ทีม engineer"
-  fi
+    sleep "$POLL_INTERVAL"
+  done
   echo "   ✅ wifi-qcom-ac พร้อม (wifi1, wifi2)"
 }
 
@@ -109,7 +126,8 @@ apply_config() {
   ros_upload "$WORK/router-config.rsc" router-config.rsc || die "อัปโหลด config ไม่ได้"
   echo "   ล้าง config แล้วรีบูตพร้อม config ใหม่ ..."
   echo y | ros_cmd "/system reset-configuration no-defaults=yes skip-backup=yes run-after-reset=router-config.rsc" >/dev/null 2>&1
-  return 0
+  wait_down "$ROUTER_IP" "$TIMEOUT_DOWN" \
+    || die "router ไม่ยอมล้าง config" "รันใหม่อีกครั้ง; ถ้ายังไม่ได้ ใน Winbox ดู Files ว่ามี router-config.rsc และดู Log แล้วส่งให้ทีม engineer"
 }
 
 # ---------------------------------------------------------------- 6. verify

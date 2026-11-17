@@ -1,0 +1,3 @@
+#!/bin/bash
+# Fake `route -n get <ip>`
+echo "   route to: ${!#}"; echo "  interface: ${STUB_ROUTE_IF:-en7}"

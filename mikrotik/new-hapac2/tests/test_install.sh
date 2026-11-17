@@ -12,7 +12,11 @@ respond() {
     *"resource get free-hdd-space"*) echo "${SIM_FREE:-5000000}";;
     *"package find name="*) n="${1#*name=}"; n="${n%%]*}"; if has "$n"; then echo 1; else echo 0; fi;;
     *"package uninstall wireless"*) touch "$S/pending_uninstall";;
-    *"interface wifi find name="*) if has wifi-qcom-ac; then echo 1; else echo 0; fi;;
+    *"interface wifi find name="*)
+      c=$(cat "$S/iface_q" 2>/dev/null || echo 0); echo $((c+1)) > "$S/iface_q"
+      if has wifi-qcom-ac && [ "$c" -ge "${SIM_IFACE_DELAY:-0}" ]; then echo 1; else echo 0; fi;;
+    ":put ok") [ -f "$S/key_rejected" ] && { rm "$S/key_rejected"; return 255; }; return 0;;
+    *"reset-configuration"*) [ "${SIM_RESET_IGNORED:-0}" = 1 ] || touch "$S/down";;
     "/system reboot")
       touch "$S/down"
       [ -f "$S/pending_uninstall" ] && { grep -vx wireless "$S/pkgs" > "$S/p2"; mv "$S/p2" "$S/pkgs"; rm "$S/pending_uninstall"; }
@@ -32,7 +36,7 @@ R
   # ping: down exactly once after each reboot, otherwise up
   cat > "$T/bin/ping" <<'R'
 #!/bin/bash
-echo "ping ${!#}" >> "$STUB_LOG"
+echo "ping $*" >> "$STUB_LOG"
 if [ -f "$T/sim/down" ]; then rm "$T/sim/down"; exit 2; fi
 exit 0
 R
@@ -42,6 +46,7 @@ R
 install_env() {
   mkdir -p "$T/packages"; echo fake > "$T/packages/routeros-7.25.1-arm.npk"; echo fake > "$T/packages/wifi-qcom-ac-7.25.1-arm.npk"
   sed 's/CHANGE_ME_8chars/goodpass123/' "$ROOT/projects/example.conf" > "$T/site.conf"
+  export INSTALLER_KEY="$T/keys/installer"
   export PATH="$T/bin:$STUBS:$PATH" PKG_DIR="$T/packages" POLL_INTERVAL=0 TIMEOUT_DOWN=3 TIMEOUT_UP=3 TIMEOUT_CONFIG=3 ASSUME_YES=1
 }
 run_install() { bash "$ROOT/install.sh" "$T/site.conf" > "$T/out.txt" 2>&1; }
@@ -96,4 +101,48 @@ test_install_imports_ssh_key() {
   install_env; sim_router 7.25.1 wifi-qcom-ac
   run_install || exit 1
   assert_contains "$(cat "$STUB_LOG")" "/user ssh-keys import public-key-file=installer.pub user=admin" "key imported"
+}
+
+# --- review fixes ---
+test_install_saves_key_for_rerun() {          # C1
+  install_env; sim_router 7.25.1 wifi-qcom-ac
+  run_install || { cat "$T/out.txt"; exit 1; }
+  assert_ok "private key kept" test -s "$INSTALLER_KEY"
+}
+test_install_rerun_uses_existing_key() {      # C1
+  install_env; sim_router 7.25.1 wifi-qcom-ac
+  mkdir -p "$T/keys"; ssh-keygen -q -t rsa -b 2048 -N "" -f "$INSTALLER_KEY"
+  run_install || { cat "$T/out.txt"; exit 1; }
+  log="$(cat "$STUB_LOG")"
+  assert_not_contains "$log" "ssh-control" "no password login"
+  assert_not_contains "$log" "scp installer.pub" "no key re-import"
+}
+test_install_falls_back_to_password_when_key_rejected() {   # C1
+  install_env; sim_router 7.25.1 wifi-qcom-ac
+  mkdir -p "$T/keys"; ssh-keygen -q -t rsa -b 2048 -N "" -f "$INSTALLER_KEY"; touch "$T/sim/key_rejected"
+  run_install || { cat "$T/out.txt"; exit 1; }
+  assert_contains "$(cat "$STUB_LOG")" "scp installer.pub" "key imported via password login"
+}
+test_ssh_opts_has_keepalive() {               # I1
+  . "$ROOT/lib.sh"; assert_contains "$(ssh_opts)" "ServerAliveInterval=" "keepalive set"
+}
+test_install_waits_for_wifi_interfaces() {    # I2
+  install_env; sim_router 7.25.1 wifi-qcom-ac; export SIM_IFACE_DELAY=3 WIFI_WAIT=5
+  run_install || { cat "$T/out.txt"; exit 1; }
+}
+test_install_stops_when_route_goes_via_wifi() {   # I3
+  install_env; sim_router 7.25.1 wifi-qcom-ac; export STUB_ROUTE_IF=en0
+  run_install && exit 1
+  assert_contains "$(cat "$T/out.txt")" "WiFi" "tells team to turn WiFi off"
+  assert_not_contains "$(cat "$STUB_LOG")" "ssh " "stops before ssh"
+}
+test_install_verify_pings_on_wired_interface() {  # I3
+  install_env; sim_router 7.25.1 wifi-qcom-ac
+  run_install || { cat "$T/out.txt"; exit 1; }
+  assert_contains "$(cat "$STUB_LOG")" "-b en7 192.168.40.1" "bound to wired if"
+}
+test_install_stops_when_reset_ignored() {     # I5
+  install_env; sim_router 7.25.1 wifi-qcom-ac; export SIM_RESET_IGNORED=1
+  run_install && exit 1
+  assert_contains "$(cat "$T/out.txt")" "ไม่ยอมล้าง config" "reset failure reported"
 }

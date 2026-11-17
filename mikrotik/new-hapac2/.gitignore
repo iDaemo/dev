@@ -1,3 +1,4 @@
 packages/
 projects/*.conf
 !projects/example.conf
+.installer_key/

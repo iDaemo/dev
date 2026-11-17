@@ -33,6 +33,10 @@ validate_conf() {
   done
   if [ -n "$WIFI_PASS" ] && { [ ${#WIFI_PASS} -lt 8 ] || [ ${#WIFI_PASS} -gt 63 ]; }; then
     err "WIFI_PASS ต้องยาว 8-63 ตัว (ตอนนี้ ${#WIFI_PASS} ตัว)"; ok=1; fi
+  if [ -n "$SSID" ] && [ "$(printf %s "$SSID" | LC_ALL=C wc -c | tr -d ' ')" -gt 32 ]; then
+    err "SSID ยาวเกิน 32 bytes (ภาษาไทย 1 ตัว = 3 bytes)"; ok=1; fi
+  if [ -n "$WIFI_PASS" ] && printf %s "$WIFI_PASS" | LC_ALL=C grep -q '[^ -~]'; then
+    err "WIFI_PASS ต้องเป็นภาษาอังกฤษ/ตัวเลข/สัญลักษณ์เท่านั้น (ห้ามภาษาไทย)"; ok=1; fi
   if [ -n "$USER_PASS" ] && [ ${#USER_PASS} -lt 8 ]; then
     err "USER_PASS ต้องยาวอย่างน้อย 8 ตัว"; ok=1; fi
   if [ -n "$IDENTITY" ] && ! echo "$IDENTITY" | grep -Eq '^[A-Za-z0-9_-]+$'; then
@@ -72,7 +76,8 @@ SSH_CTL="${SSH_CTL:-}"     # ControlPath for the first password login
 
 ssh_opts() {
   echo "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
-  echo "-o ConnectTimeout=5 -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa"
+  echo "-o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=3"
+  echo "-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa"
   [ -n "$SSH_KEY" ] && echo "-i $SSH_KEY -o BatchMode=yes"
   [ -n "$SSH_CTL" ] && echo "-o ControlPath=$SSH_CTL"
 }
@@ -108,7 +113,17 @@ version_lt() {
   return 1
 }
 
-ping_ok() { ping -c1 -t1 "$1" >/dev/null 2>&1; }
+# ping_ok <ip> : one ping; bound to $BIND_IF (the wired port) when set
+ping_ok() {
+  if [ -n "${BIND_IF:-}" ]; then ping -c1 -t1 -b "$BIND_IF" "$1" >/dev/null 2>&1
+  else ping -c1 -t1 "$1" >/dev/null 2>&1; fi
+}
+
+# route_if <ip> : Mac interface used to reach ip (e.g. en7)
+route_if() { route -n get "$1" 2>/dev/null | awk '/interface:/{print $2}'; }
+
+# wifi_dev : Mac Wi-Fi device name (e.g. en0)
+wifi_dev() { networksetup -listallhardwareports 2>/dev/null | awk '/Hardware Port: Wi-Fi/{getline; print $2}'; }
 
 # wait_down <ip> <timeout_s>
 wait_down() {

@@ -1,0 +1,3 @@
+#!/bin/bash
+# Fake `networksetup -listallhardwareports`
+printf 'Hardware Port: Wi-Fi\nDevice: en0\nEthernet Address: aa:bb\n\nHardware Port: USB 10/100/1000 LAN\nDevice: en7\n'
