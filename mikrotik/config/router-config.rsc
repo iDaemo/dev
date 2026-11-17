@@ -149,7 +149,7 @@ add chain=forward action=drop comment="Drop ALL"
 /ip socks set enabled=no
 /tool bandwidth-server set enabled=no
 /user add name=sonos group=full password=33338888
-/user remove 0
+/user remove [find name=admin]
 
 #######################################
 # IMPLEMENT LIST
