@@ -1,0 +1,8 @@
+#!/bin/bash
+# Fake ssh. Logs "ssh <command>" and answers via responder file $STUB_SSH_RESPONDER,
+# which must define: respond "<routeros command>"  (prints output, returns status)
+last="${!#}"
+case "$last" in *@*|-*) echo "ssh-control $*" >> "${STUB_LOG:-/dev/null}"; exit 0;; esac
+echo "ssh $last" >> "${STUB_LOG:-/dev/null}"
+if [ -n "${STUB_SSH_RESPONDER:-}" ]; then . "$STUB_SSH_RESPONDER"; respond "$last"; exit $?; fi
+exit 0

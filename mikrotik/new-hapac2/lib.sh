@@ -59,3 +59,84 @@ render_config() {
     return 1
   fi
 }
+
+# ---------------------------------------------------------------- router I/O
+ROUTER_IP="${ROUTER_IP:-192.168.88.1}"
+ROUTER_USER="${ROUTER_USER:-admin}"
+POLL_INTERVAL="${POLL_INTERVAL:-2}"
+TIMEOUT_DOWN="${TIMEOUT_DOWN:-60}"
+TIMEOUT_UP="${TIMEOUT_UP:-240}"
+REQUIRE_SSH="${REQUIRE_SSH:-1}"
+SSH_KEY="${SSH_KEY:-}"     # set by install.sh after the key is imported
+SSH_CTL="${SSH_CTL:-}"     # ControlPath for the first password login
+
+ssh_opts() {
+  echo "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
+  echo "-o ConnectTimeout=5 -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa"
+  [ -n "$SSH_KEY" ] && echo "-i $SSH_KEY -o BatchMode=yes"
+  [ -n "$SSH_CTL" ] && echo "-o ControlPath=$SSH_CTL"
+}
+
+# ros_cmd "<routeros command>" : run on router, stdout passes through
+ros_cmd() {
+  # shellcheck disable=SC2046
+  ssh $(ssh_opts) "$ROUTER_USER@$ROUTER_IP" "$1"
+}
+
+# ros_upload <local> <remote-name>
+ros_upload() {
+  # shellcheck disable=SC2046
+  scp -q $(ssh_opts) "$1" "$ROUTER_USER@$ROUTER_IP:$2"
+}
+
+# ros_version : prints e.g. 7.25.1
+ros_version() {
+  local v
+  v="$(ros_cmd ':put [/system resource get version]')" || return 1
+  v="${v%%$'\r'*}"; echo "${v%% *}"
+}
+
+# version_lt <a> <b> : true if a < b (dotted numeric)
+version_lt() {
+  local a="$1" b="$2" i x y
+  for i in 1 2 3 4; do
+    x="$(echo "$a" | cut -d. -f$i | tr -cd '0-9')"; y="$(echo "$b" | cut -d. -f$i | tr -cd '0-9')"
+    x="${x:-0}"; y="${y:-0}"
+    [ "$x" -lt "$y" ] && return 0
+    [ "$x" -gt "$y" ] && return 1
+  done
+  return 1
+}
+
+ping_ok() { ping -c1 -t1 "$1" >/dev/null 2>&1; }
+
+# wait_down <ip> <timeout_s>
+wait_down() {
+  local end=$((SECONDS + $2))
+  while ping_ok "$1"; do
+    [ $SECONDS -ge $end ] && return 1
+    sleep "$POLL_INTERVAL"
+  done
+}
+
+# wait_up <ip> <timeout_s> : ping (and ssh when REQUIRE_SSH=1) must answer
+wait_up() {
+  local end=$((SECONDS + $2))
+  while :; do
+    if ping_ok "$1"; then
+      [ "$REQUIRE_SSH" != 1 ] && return 0
+      ros_cmd ':put ok' >/dev/null 2>&1 && return 0
+    fi
+    [ $SECONDS -ge $end ] && return 1
+    sleep "$POLL_INTERVAL"
+  done
+}
+
+# ros_reboot : reboot and wait until the router answers again
+ros_reboot() {
+  echo "   รีบูต router ... (รอได้ถึง $((TIMEOUT_DOWN + TIMEOUT_UP)) วินาที ห้ามถอดปลั๊ก)"
+  echo y | ros_cmd '/system reboot' >/dev/null 2>&1
+  if ! wait_down "$ROUTER_IP" "$TIMEOUT_DOWN"; then err "router ไม่ยอมรีบูต"; return 1; fi
+  if ! wait_up "$ROUTER_IP" "$TIMEOUT_UP"; then err "router ไม่กลับมาหลังรีบูต (รอ $TIMEOUT_UP วินาที)"; return 1; fi
+  echo "   router กลับมาแล้ว"
+}

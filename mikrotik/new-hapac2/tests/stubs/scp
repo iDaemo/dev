@@ -1,0 +1,5 @@
+#!/bin/bash
+# Fake scp: logs "scp <src> <dst>"
+n=$#; src="${@:$((n-1)):1}"; dst="${!#}"
+echo "scp $(basename "$src") $dst" >> "${STUB_LOG:-/dev/null}"
+exit "${STUB_SCP_RC:-0}"
